@@ -1,0 +1,32 @@
+<div class="sidebar" [class.collapsed]="!isSidebarOpen">
+  <div class="sidebar-header">
+    <div class="logo" *ngIf="isSidebarOpen">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">StudySpark</span>
+    </div>
+    <button class="toggle-btn" (click)="toggleSidebar()">
+      <i [class]="isSidebarOpen ? 'bi bi-chevron-left' : 'bi bi-chevron-right'"></i>
+    </button>
+  </div>
+
+  <div class="sidebar-menu">
+    <a
+      *ngFor="let item of menuItems"
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      class="menu-item"
+      [title]="item.label"
+    >
+      <i [class]="item.icon"></i>
+      <span class="menu-label" *ngIf="isSidebarOpen">{{ item.label }}</span>
+      <span class="badge" *ngIf="item.badge && isSidebarOpen">{{ item.badge }}</span>
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="logout-btn" (click)="logout()" [title]="'Logout'">
+      <i class="bi bi-box-arrow-right"></i>
+      <span *ngIf="isSidebarOpen">Logout</span>
+    </button>
+  </div>
+</div>

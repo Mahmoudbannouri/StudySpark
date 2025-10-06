@@ -1,0 +1,100 @@
+<div class="student-layout">
+  <app-sidebar></app-sidebar>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">Q&A Chatbot</h1>
+          <p class="page-subtitle">Ask questions about your documents</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <div class="chatbot-container">
+        <!-- Document Selector -->
+        <div class="document-selector" *ngIf="!selectedDocument">
+          <h4 class="mb-3">Select a document to start chatting:</h4>
+          <div class="documents-grid">
+            <div
+              *ngFor="let doc of documents"
+              class="document-card"
+              (click)="selectDocument(doc)"
+            >
+              <i class="bi bi-file-text-fill"></i>
+              <span>{{ doc.name }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Document Badge -->
+        <div class="current-document" *ngIf="selectedDocument">
+          <i class="bi bi-file-text-fill me-2"></i>
+          <span>{{ selectedDocument }}</span>
+          <button class="btn-change" (click)="selectedDocument = null">
+            <i class="bi bi-arrow-left-circle me-1"></i> Change Document
+          </button>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" #messagesContainer>
+          <div
+            *ngFor="let message of messages"
+            class="message-wrapper"
+            [class.user-message]="message.isUser"
+            [class.bot-message]="!message.isUser"
+          >
+            <div class="message-bubble">
+              <div class="message-header" *ngIf="!message.isUser">
+                <i class="bi bi-robot"></i>
+                <span>AI Assistant</span>
+              </div>
+              <div class="message-text">{{ message.text }}</div>
+              <div class="message-time">
+                {{ message.timestamp | date:'short' }}
+              </div>
+            </div>
+          </div>
+
+          <div class="message-wrapper bot-message" *ngIf="isLoading">
+            <div class="message-bubble">
+              <div class="message-header">
+                <i class="bi bi-robot"></i>
+                <span>AI Assistant</span>
+              </div>
+              <div class="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-area">
+          <div class="input-wrapper">
+            <textarea
+              [(ngModel)]="userInput"
+              (keypress)="onKeyPress($event)"
+              placeholder="Ask a question about your document..."
+              rows="1"
+              [disabled]="!selectedDocument"
+            ></textarea>
+            <button
+              class="btn-send"
+              (click)="sendMessage()"
+              [disabled]="!userInput.trim() || !selectedDocument || isLoading"
+            >
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </div>
+          <p class="input-hint" *ngIf="selectedDocument">
+            Press Enter to send, Shift+Enter for new line
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

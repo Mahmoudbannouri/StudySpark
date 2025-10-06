@@ -19,19 +19,26 @@ export class LoginComponent implements AfterViewInit {
   constructor(private auth: AuthService, private router: Router, private el: ElementRef) {}
 
   ngAfterViewInit() {
-    gsap.from(this.el.nativeElement.querySelector('.auth-card'), {
-      duration: 1.2,
-      y: 40,
-      opacity: 0,
-      ease: 'power3.out'
-    });
-    gsap.to('.floating-shape', {
-      y: 20,
-      repeat: -1,
-      yoyo: true,
-      duration: 2,
-      ease: 'sine.inOut'
-    });
+    // Simple fade in animation
+    const card = this.el.nativeElement.querySelector('.auth-card');
+    if (card) {
+      gsap.fromTo(card,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }
+      );
+    }
+
+    // Floating shapes animation
+    const shapes = this.el.nativeElement.querySelectorAll('.floating-shape');
+    if (shapes.length > 0) {
+      gsap.to(shapes, {
+        y: 20,
+        repeat: -1,
+        yoyo: true,
+        duration: 2,
+        ease: 'sine.inOut'
+      });
+    }
   }
 
   onLogin(): void {

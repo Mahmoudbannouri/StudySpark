@@ -1,0 +1,110 @@
+<div class="student-layout">
+  <app-sidebar></app-sidebar>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">Upload Document</h1>
+          <p class="page-subtitle">Upload your study materials (PDF, Text, Audio, Video)</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <div class="upload-container">
+        <div
+          class="drop-zone"
+          [class.dragging]="isDragging"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+        >
+          <i class="bi bi-cloud-upload upload-icon"></i>
+          <h3>Drag & Drop your file here</h3>
+          <p class="text-muted">or</p>
+          <label for="file-input" class="btn btn-primary">
+            Browse Files
+          </label>
+          <input
+            type="file"
+            id="file-input"
+            (change)="onFileSelected($event)"
+            hidden
+            accept=".pdf,.txt,.mp3,.wav,.mp4,.mpeg"
+          >
+          <p class="file-info mt-3">
+            Supported: PDF, TXT, MP3, WAV, MP4 (Max 50MB)
+          </p>
+        </div>
+
+        <div *ngIf="selectedFile" class="file-preview">
+          <div class="file-card">
+            <div class="file-details">
+              <i [class]="'file-icon ' + getFileIcon(selectedFile.type)"></i>
+              <div class="file-info-details">
+                <h5>{{ selectedFile.name }}</h5>
+                <p>{{ formatFileSize(selectedFile.size) }}</p>
+              </div>
+              <button class="btn-remove" (click)="removeFile()" *ngIf="!isUploading">
+                <i class="bi bi-x-circle"></i>
+              </button>
+            </div>
+
+            <div *ngIf="isUploading" class="upload-progress">
+              <div class="progress">
+                <div
+                  class="progress-bar"
+                  [style.width.%]="uploadProgress"
+                  role="progressbar"
+                >
+                  {{ uploadProgress }}%
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="btn btn-success btn-upload"
+              (click)="uploadFile()"
+              *ngIf="!isUploading"
+            >
+              <i class="bi bi-upload me-2"></i>
+              Upload File
+            </button>
+
+            <button
+              class="btn btn-secondary btn-upload"
+              *ngIf="isUploading"
+              disabled
+            >
+              <span class="spinner-border spinner-border-sm me-2"></span>
+              Uploading...
+            </button>
+          </div>
+        </div>
+
+        <div class="upload-tips mt-5">
+          <h4 class="mb-3">📝 Tips for best results:</h4>
+          <ul class="tips-list">
+            <li>
+              <i class="bi bi-check-circle text-success"></i>
+              Use clear, high-quality PDFs for better text extraction
+            </li>
+            <li>
+              <i class="bi bi-check-circle text-success"></i>
+              Audio/video files will be automatically transcribed
+            </li>
+            <li>
+              <i class="bi bi-check-circle text-success"></i>
+              Once uploaded, you can use all AI tools on your document
+            </li>
+            <li>
+              <i class="bi bi-check-circle text-success"></i>
+              Your files are securely stored and encrypted
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -22,7 +22,7 @@
   backdrop-filter: blur(20px);
   width: 440px;
   max-width: 90%;
-  animation: slideUp 0.8s ease-out;
+  opacity: 1; /* Ensure visible by default */
 }
 
 .auth-icon {
@@ -135,16 +135,7 @@
   }
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Removed conflicting slideUp animation */
 
 @keyframes bounce {
   0%, 100% {

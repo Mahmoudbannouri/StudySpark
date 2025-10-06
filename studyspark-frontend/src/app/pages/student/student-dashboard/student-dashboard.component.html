@@ -1,66 +1,299 @@
-<div class="student-page">
+<div class="workspace-layout">
   <!-- Top Navigation Bar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-primary shadow-sm">
-    <div class="container-fluid px-4">
-      <a class="navbar-brand fw-bold" href="#">
-        <span class="brand-icon">⚡</span> StudySpark
-      </a>
-      <div class="d-flex align-items-center gap-3">
-        <span class="text-white-50 d-none d-md-inline">{{ user?.email }}</span>
-        <div class="user-badge">
-          <span class="fw-semibold">{{ user?.fullname }}</span>
-        </div>
-        <button class="btn btn-outline-light btn-sm rounded-pill" (click)="logout()">
-          <i class="bi bi-box-arrow-right me-1"></i> Logout
+  <nav class="top-navbar">
+    <div class="navbar-brand">
+      <span class="brand-icon">⚡</span>
+      <span class="brand-text">StudySpark</span>
+    </div>
+    <div class="navbar-center">
+      <div class="search-box">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Search documents..." [(ngModel)]="searchQuery">
+      </div>
+    </div>
+    <div class="navbar-right">
+      <div class="user-menu">
+        <div class="avatar">{{ user?.fullname?.charAt(0) }}</div>
+        <span class="user-name">{{ user?.fullname }}</span>
+        <button class="btn-logout" (click)="logout()">
+          <i class="bi bi-box-arrow-right"></i>
         </button>
       </div>
     </div>
   </nav>
 
-  <!-- Main Content -->
-  <div class="dashboard-container container py-5">
-    <div class="welcome-section mb-5">
-      <h2 class="fw-bold text-gradient mb-2">🎓 Welcome back, {{ user?.fullname }}!</h2>
-      <p class="text-muted">Ready to enhance your learning journey?</p>
+  <!-- Main Workspace -->
+  <div class="workspace-container">
+    <!-- Left Panel: Upload & Documents -->
+    <div class="left-panel">
+      <!-- Upload Section -->
+      <div class="upload-section">
+        <h3 class="panel-title">
+          <i class="bi bi-cloud-upload me-2"></i>
+          Upload Document
+        </h3>
+        <div
+          class="upload-dropzone"
+          [class.dragging]="isDragging"
+          (click)="fileInput.click()"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDrop($event)"
+        >
+          <i class="bi bi-cloud-arrow-up upload-icon"></i>
+          <p class="upload-text">Click to upload or drag & drop</p>
+          <p class="upload-hint">Supports .txt, .pdf, audio & video</p>
+          <input
+            #fileInput
+            type="file"
+            hidden
+            (change)="onFileSelected($event)"
+            accept=".pdf,.txt,.mp3,.wav,.mp4"
+          >
+        </div>
+      </div>
+
+      <!-- Documents List -->
+      <div class="documents-section">
+        <div class="section-header">
+          <h3 class="panel-title">
+            <i class="bi bi-folder me-2"></i>
+            My Documents
+          </h3>
+          <span class="doc-count">{{ documents.length }}</span>
+        </div>
+
+        <div class="documents-list" *ngIf="documents.length > 0; else noDocuments">
+          <div
+            *ngFor="let doc of documents"
+            class="document-item"
+            [class.active]="selectedDocument?.id === doc.id"
+            (click)="selectDocument(doc)"
+          >
+            <div class="doc-icon">
+              <i [class]="getDocIcon(doc.type)"></i>
+            </div>
+            <div class="doc-info">
+              <div class="doc-name">{{ doc.name }}</div>
+              <div class="doc-meta">
+                <span>{{ doc.wordCount }} words</span>
+                <span>•</span>
+                <span>{{ doc.uploadedAt | date:'short' }}</span>
+              </div>
+            </div>
+            <button class="btn-delete" (click)="deleteDocument(doc, $event)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <ng-template #noDocuments>
+          <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>No documents uploaded.</p>
+          </div>
+        </ng-template>
+      </div>
     </div>
 
-    <div *ngIf="quota" class="mb-5">
-      <app-quota-card [quota]="quota"></app-quota-card>
-    </div>
+    <!-- Main Content Area -->
+    <div class="main-panel">
 
-    <div class="tools-section">
-      <h4 class="fw-semibold mb-4 text-center">Your AI-Powered Study Tools</h4>
-      <div class="row g-4">
-        <div class="col-md-6 col-lg-3">
-          <div class="tool-card shadow-sm rounded-4 p-4 text-center h-100">
-            <div class="tool-icon mb-3">📄</div>
-            <h5 class="fw-semibold mb-2">Summarizer</h5>
-            <p class="text-muted small mb-3">Get concise summaries of your study materials</p>
-            <button class="btn btn-outline-primary btn-sm rounded-pill">Launch</button>
+      <!-- Welcome Section (shown when no document is selected) -->
+      <div class="welcome-section" *ngIf="!selectedDocument">
+        <div class="welcome-content">
+          <div class="welcome-icon">
+            <i class="bi bi-stars"></i>
+          </div>
+          <h1 class="welcome-title">Welcome to StudySpark!</h1>
+          <p class="welcome-subtitle">
+            Your personal AI study assistant. Turn your notes and lectures into powerful learning tools in just a few clicks.
+          </p>
+
+          <!-- How to Get Started -->
+          <div class="tutorial-section">
+            <h2 class="tutorial-title">
+              <i class="bi bi-lightbulb me-2"></i>
+              How to Get Started
+            </h2>
+            <div class="tutorial-steps">
+              <div class="tutorial-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                  <h3>Upload a File</h3>
+                  <p>Use the panel on the left to upload your course notes, PDFs, or even audio/video lectures.</p>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                  <h3>Select a Tool</h3>
+                  <p>Once your file is selected, choose an AI tool like Summarizer, Flashcards, or Quiz Generator.</p>
+                </div>
+              </div>
+              <div class="tutorial-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                  <h3>Start Learning</h3>
+                  <p>Interact with the generated content to study smarter, review key concepts, and ace your exams.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div class="quick-stats">
+            <div class="stat-item">
+              <i class="bi bi-file-text"></i>
+              <span class="stat-value">{{ documents.length }}</span>
+              <span class="stat-label">Documents</span>
+            </div>
+            <div class="stat-item">
+              <i class="bi bi-card-list"></i>
+              <span class="stat-value">{{ activityCount.flashcards }}</span>
+              <span class="stat-label">Flashcards</span>
+            </div>
+            <div class="stat-item">
+              <i class="bi bi-question-circle"></i>
+              <span class="stat-value">{{ activityCount.quizzes }}</span>
+              <span class="stat-label">Quizzes</span>
+            </div>
+            <div class="stat-item">
+              <i class="bi bi-calendar-check"></i>
+              <span class="stat-value">{{ activityCount.studyPlans }}</span>
+              <span class="stat-label">Study Plans</span>
+            </div>
           </div>
         </div>
-        <div class="col-md-6 col-lg-3">
-          <div class="tool-card shadow-sm rounded-4 p-4 text-center h-100">
-            <div class="tool-icon mb-3">🧠</div>
-            <h5 class="fw-semibold mb-2">Flashcards</h5>
-            <p class="text-muted small mb-3">Create smart flashcards for better retention</p>
-            <button class="btn btn-outline-success btn-sm rounded-pill">Launch</button>
+      </div>
+
+      <!-- Document Selected View -->
+      <div class="document-view" *ngIf="selectedDocument">
+        <!-- Document Header -->
+        <div class="document-header">
+          <div class="doc-header-info">
+            <i [class]="getDocIcon(selectedDocument.type) + ' doc-header-icon'"></i>
+            <div>
+              <h2 class="doc-header-title">{{ selectedDocument.name }}</h2>
+              <p class="doc-header-meta">
+                {{ selectedDocument.wordCount }} words • Uploaded {{ selectedDocument.uploadedAt | date:'short' }}
+              </p>
+            </div>
           </div>
         </div>
-        <div class="col-md-6 col-lg-3">
-          <div class="tool-card shadow-sm rounded-4 p-4 text-center h-100">
-            <div class="tool-icon mb-3">🗓</div>
-            <h5 class="fw-semibold mb-2">Study Plan</h5>
-            <p class="text-muted small mb-3">Generate personalized study schedules</p>
-            <button class="btn btn-outline-info btn-sm rounded-pill">Launch</button>
+
+        <!-- AI Tools Grid -->
+        <div class="tools-grid">
+          <div class="tool-card" (click)="useTool('summary')">
+            <div class="tool-header">
+              <div class="tool-icon bg-blue">
+                <i class="bi bi-file-text"></i>
+              </div>
+              <h3 class="tool-name">Summary</h3>
+            </div>
+            <p class="tool-desc">Generate short, medium, and long summaries of your document.</p>
+          </div>
+
+          <div class="tool-card" (click)="useTool('flashcards')">
+            <div class="tool-header">
+              <div class="tool-icon bg-green">
+                <i class="bi bi-card-list"></i>
+              </div>
+              <h3 class="tool-name">Flashcards</h3>
+            </div>
+            <p class="tool-desc">Create question & answer flashcards for effective revision.</p>
+          </div>
+
+          <div class="tool-card" (click)="useTool('quiz')">
+            <div class="tool-header">
+              <div class="tool-icon bg-yellow">
+                <i class="bi bi-question-circle"></i>
+              </div>
+              <h3 class="tool-name">Quiz</h3>
+            </div>
+            <p class="tool-desc">Test your knowledge with automatically generated quizzes.</p>
+          </div>
+
+          <div class="tool-card" (click)="useTool('qna')">
+            <div class="tool-header">
+              <div class="tool-icon bg-purple">
+                <i class="bi bi-chat-dots"></i>
+              </div>
+              <h3 class="tool-name">Q&A</h3>
+            </div>
+            <p class="tool-desc">Ask questions and get answers from your document, with web search.</p>
+          </div>
+
+          <div class="tool-card" (click)="useTool('study-plan')">
+            <div class="tool-header">
+              <div class="tool-icon bg-indigo">
+                <i class="bi bi-calendar-check"></i>
+              </div>
+              <h3 class="tool-name">Study Plan</h3>
+            </div>
+            <p class="tool-desc">Get a personalized study plan to prepare for your exams.</p>
+          </div>
+
+          <div class="tool-card" (click)="useTool('transcribe')">
+            <div class="tool-header">
+              <div class="tool-icon bg-orange">
+                <i class="bi bi-camera-video"></i>
+              </div>
+              <h3 class="tool-name">Transcribe</h3>
+            </div>
+            <p class="tool-desc">Convert audio/video lectures into structured notes.</p>
+          </div>
+
+          <div class="tool-card" (click)="useTool('mind-map')">
+            <div class="tool-header">
+              <div class="tool-icon bg-teal">
+                <i class="bi bi-diagram-3"></i>
+              </div>
+              <h3 class="tool-name">Mind Map</h3>
+            </div>
+            <p class="tool-desc">Visually organize key concepts with an AI-generated mind map.</p>
+          </div>
+
+          <div class="tool-card" (click)="useTool('tutor')">
+            <div class="tool-header">
+              <div class="tool-icon bg-pink">
+                <i class="bi bi-person-video3"></i>
+              </div>
+              <h3 class="tool-name">AI Tutor</h3>
+            </div>
+            <p class="tool-desc">Engage with your document via interactive learning modes to deepen understanding.</p>
+          </div>
+
+          <div class="tool-card" (click)="useTool('visualize')">
+            <div class="tool-header">
+              <div class="tool-icon bg-red">
+                <i class="bi bi-image"></i>
+              </div>
+              <h3 class="tool-name">Visualize Concept</h3>
+            </div>
+            <p class="tool-desc">Generate images and diagrams to visualize complex topics and ideas.</p>
           </div>
         </div>
-        <div class="col-md-6 col-lg-3">
-          <div class="tool-card shadow-sm rounded-4 p-4 text-center h-100">
-            <div class="tool-icon mb-3">🤖</div>
-            <h5 class="fw-semibold mb-2">Quiz Generator</h5>
-            <p class="text-muted small mb-3">Test your knowledge with AI quizzes</p>
-            <button class="btn btn-outline-warning btn-sm rounded-pill">Launch</button>
+
+        <!-- Recent Activity for this document -->
+        <div class="recent-activity" *ngIf="selectedDocument.recentActivity && selectedDocument.recentActivity.length > 0">
+          <h3 class="activity-title">
+            <i class="bi bi-clock-history me-2"></i>
+            Recent Activity
+          </h3>
+          <div class="activity-list">
+            <div class="activity-item" *ngFor="let activity of selectedDocument.recentActivity">
+              <div class="activity-icon">
+                <i [class]="'bi ' + activity.icon"></i>
+              </div>
+              <div class="activity-info">
+                <div class="activity-name">{{ activity.name }}</div>
+                <div class="activity-time">{{ activity.timestamp | date:'short' }}</div>
+              </div>
+              <button class="btn-view" (click)="viewActivity(activity)">
+                <i class="bi bi-arrow-right"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
