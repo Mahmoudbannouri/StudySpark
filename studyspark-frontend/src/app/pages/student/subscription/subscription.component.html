@@ -89,73 +89,244 @@
       <div class="plans-grid" *ngIf="plans">
         <!-- Free Plan -->
         <div class="plan-card free" [class.current]="currentSubscription?.tier === 'free'">
-          <div class="plan-badge">FREE</div>
+          <div class="plan-header-decoration"></div>
+          <div class="plan-badge free-badge">
+            <i class="bi bi-gift"></i>
+            FREE
+          </div>
           <h3 class="plan-name">{{ plans.free.name }}</h3>
+          <div class="plan-description">Perfect for getting started with AI-powered learning</div>
           <div class="plan-price">
             <span class="price">${{ plans.free.price }}</span>
             <span class="period">Forever</span>
           </div>
-          <ul class="plan-features">
-            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.summaries }} Summaries</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.flashcards }} Flashcards</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.quizzes }} Quizzes</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.chats }} Chats</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.studyPlans }} Study Plans</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.maxUploads }} Max Uploads</li>
-          </ul>
+
+          <div class="plan-section">
+            <h4 class="section-heading"><i class="bi bi-lightning-charge-fill"></i> AI Tools Included</h4>
+            <ul class="plan-features">
+              <li>
+                <i class="bi bi-file-text-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Document Summarizer</span>
+                  <span class="feature-quota">{{ plans.free.quotas.summaries }} summaries/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-card-list"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Flashcard Generator</span>
+                  <span class="feature-quota">{{ plans.free.quotas.flashcards }} flashcards/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-question-circle-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Quiz Generator</span>
+                  <span class="feature-quota">{{ plans.free.quotas.quizzes }} quizzes/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-chat-dots-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Q&A Chatbot (RAG)</span>
+                  <span class="feature-quota">{{ plans.free.quotas.chats }} messages/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-calendar-check-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Study Plan Creator</span>
+                  <span class="feature-quota">{{ plans.free.quotas.studyPlans }} plans/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-cloud-upload-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Document Uploads</span>
+                  <span class="feature-quota">{{ plans.free.quotas.maxUploads }} documents max</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
           <button
             class="btn-subscribe"
             [disabled]="currentSubscription?.tier === 'free'"
             (click)="subscribe('free')">
+            <i class="bi bi-check-circle"></i>
             {{ currentSubscription?.tier === 'free' ? 'Current Plan' : 'Downgrade' }}
           </button>
         </div>
 
         <!-- Pro Plan -->
         <div class="plan-card pro" [class.current]="currentSubscription?.tier === 'pro'">
-          <div class="plan-badge popular">POPULAR</div>
+          <div class="plan-header-decoration"></div>
+          <div class="popular-ribbon">
+            <i class="bi bi-star-fill"></i> MOST POPULAR
+          </div>
+          <div class="plan-badge pro-badge">
+            <i class="bi bi-rocket-takeoff-fill"></i>
+            PRO
+          </div>
           <h3 class="plan-name">{{ plans.pro.name }}</h3>
+          <div class="plan-description">For serious students who need more power</div>
           <div class="plan-price">
             <span class="price">${{ plans.pro.price }}</span>
             <span class="period">/ week</span>
           </div>
-          <ul class="plan-features">
-            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.summaries }} Summaries</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.flashcards }} Flashcards</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.quizzes }} Quizzes</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.chats }} Chats</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.studyPlans }} Study Plans</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.maxUploads }} Max Uploads</li>
-          </ul>
+
+          <div class="plan-section">
+            <h4 class="section-heading"><i class="bi bi-lightning-charge-fill"></i> All AI Tools + More</h4>
+            <ul class="plan-features">
+              <li>
+                <i class="bi bi-file-text-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Document Summarizer</span>
+                  <span class="feature-quota">{{ plans.pro.quotas.summaries }} summaries/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-card-list"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Flashcard Generator</span>
+                  <span class="feature-quota">{{ plans.pro.quotas.flashcards }} flashcards/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-question-circle-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Quiz Generator</span>
+                  <span class="feature-quota">{{ plans.pro.quotas.quizzes }} quizzes/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-chat-dots-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Q&A Chatbot (RAG)</span>
+                  <span class="feature-quota">{{ plans.pro.quotas.chats }} messages/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-calendar-check-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Study Plan Creator</span>
+                  <span class="feature-quota">{{ plans.pro.quotas.studyPlans }} plans/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-cloud-upload-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Document Uploads</span>
+                  <span class="feature-quota">{{ plans.pro.quotas.maxUploads }} documents max</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="plan-perks">
+            <div class="perk-item">
+              <i class="bi bi-patch-check-fill"></i>
+              <span>Priority Support</span>
+            </div>
+            <div class="perk-item">
+              <i class="bi bi-lightning-fill"></i>
+              <span>Faster Processing</span>
+            </div>
+          </div>
+
           <button
-            class="btn-subscribe"
+            class="btn-subscribe pro-btn"
             [disabled]="currentSubscription?.tier === 'pro'"
             (click)="subscribe('pro')">
-            {{ currentSubscription?.tier === 'pro' ? 'Current Plan' : 'Subscribe' }}
+            <i class="bi bi-rocket-takeoff"></i>
+            {{ currentSubscription?.tier === 'pro' ? 'Current Plan' : 'Upgrade to Pro' }}
           </button>
         </div>
 
         <!-- VIP Plan -->
         <div class="plan-card vip" [class.current]="currentSubscription?.tier === 'vip'">
-          <div class="plan-badge premium">VIP</div>
+          <div class="plan-header-decoration"></div>
+          <div class="vip-shine"></div>
+          <div class="plan-badge vip-badge">
+            <i class="bi bi-gem"></i>
+            VIP
+          </div>
           <h3 class="plan-name">{{ plans.vip.name }}</h3>
+          <div class="plan-description">Ultimate power for top performers</div>
           <div class="plan-price">
             <span class="price">${{ plans.vip.price }}</span>
             <span class="period">/ week</span>
           </div>
-          <ul class="plan-features">
-            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.summaries }} Summaries</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.flashcards }} Flashcards</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.quizzes }} Quizzes</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.chats }} Chats</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.studyPlans }} Study Plans</li>
-            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.maxUploads }} Max Uploads</li>
-          </ul>
+
+          <div class="plan-section">
+            <h4 class="section-heading"><i class="bi bi-lightning-charge-fill"></i> Unlimited Power</h4>
+            <ul class="plan-features">
+              <li>
+                <i class="bi bi-file-text-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Document Summarizer</span>
+                  <span class="feature-quota unlimited">{{ plans.vip.quotas.summaries }} summaries/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-card-list"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Flashcard Generator</span>
+                  <span class="feature-quota unlimited">{{ plans.vip.quotas.flashcards }} flashcards/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-question-circle-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Quiz Generator</span>
+                  <span class="feature-quota unlimited">{{ plans.vip.quotas.quizzes }} quizzes/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-chat-dots-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Q&A Chatbot (RAG)</span>
+                  <span class="feature-quota unlimited">{{ plans.vip.quotas.chats }} messages/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-calendar-check-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Study Plan Creator</span>
+                  <span class="feature-quota unlimited">{{ plans.vip.quotas.studyPlans }} plans/week</span>
+                </div>
+              </li>
+              <li>
+                <i class="bi bi-cloud-upload-fill"></i>
+                <div class="feature-details">
+                  <span class="feature-name">Document Uploads</span>
+                  <span class="feature-quota unlimited">{{ plans.vip.quotas.maxUploads }} documents max</span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="plan-perks vip-perks">
+            <div class="perk-item">
+              <i class="bi bi-shield-fill-check"></i>
+              <span>VIP Support 24/7</span>
+            </div>
+            <div class="perk-item">
+              <i class="bi bi-lightning-fill"></i>
+              <span>Fastest Processing</span>
+            </div>
+            <div class="perk-item">
+              <i class="bi bi-stars"></i>
+              <span>Early Access Features</span>
+            </div>
+          </div>
+
           <button
-            class="btn-subscribe"
+            class="btn-subscribe vip-btn"
             [disabled]="currentSubscription?.tier === 'vip'"
             (click)="subscribe('vip')">
-            {{ currentSubscription?.tier === 'vip' ? 'Current Plan' : 'Subscribe' }}
+            <i class="bi bi-gem"></i>
+            {{ currentSubscription?.tier === 'vip' ? 'Current Plan' : 'Upgrade to VIP' }}
           </button>
         </div>
       </div>

@@ -11,6 +11,10 @@ import { AuthGuard } from './guards/auth.guard';
 import { LogoutComponent } from './pages/auth/logout/logout.component';
 import { SessionPageComponent } from './pages/session/session-page.component';
 import { SubscriptionComponent } from './pages/student/subscription/subscription.component';
+import { StudyPlanComponent } from './pages/student/study-plan/study-plan.component';
+import { TranscribeComponent } from './pages/student/transcribe/transcribe.component';
+import { FlashcardsComponent } from './pages/student/flashcards/flashcards.component';
+import { QuizComponent } from './pages/student/quiz/quiz.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -28,11 +32,11 @@ export const routes: Routes = [
   { path: 'student/chatbot', component: ChatbotComponent, canActivate: [AuthGuard] },
   { path: 'student/summarizer', component: SummarizerComponent, canActivate: [AuthGuard] },
   { path: 'student/documents', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create documents page
-  { path: 'student/flashcards', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create flashcards page
-  { path: 'student/quiz', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create quiz page
-  { path: 'student/study-plan', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create study plan page
+  { path: 'student/flashcards', component: FlashcardsComponent, canActivate: [AuthGuard] },
+  { path: 'student/quiz', component: QuizComponent, canActivate: [AuthGuard] },
+  { path: 'student/study-plan', component: StudyPlanComponent, canActivate: [AuthGuard] },
   { path: 'student/mind-map', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create mind map page
-  { path: 'student/transcribe', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create transcribe page
+  { path: 'student/transcribe', component: TranscribeComponent, canActivate: [AuthGuard] },
   { path: 'student/visualize', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create visualize page
 
   // Session route
