@@ -1,0 +1,58 @@
+/* You can add global styles to this file, and also import other style files */
+body {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb, #3b82f6);
+    font-family: 'Poppins', sans-serif;
+    color: #1e293b;
+    min-height: 100vh;
+  }
+  
+  .auth-wrapper {
+    height: 100vh;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.15), rgba(255,255,255,0));
+    backdrop-filter: blur(6px);
+  }
+  
+  .bg-glass {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+  }
+  
+  .text-gradient {
+    background: linear-gradient(90deg, #2563eb, #3b82f6, #0ea5e9);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .btn-gradient {
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    color: #fff;
+    border: none;
+    transition: 0.3s ease-in-out;
+  }
+  
+  .btn-gradient:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+  
+  .btn-success-gradient {
+    background: linear-gradient(90deg, #16a34a, #22c55e);
+    color: #fff;
+    border: none;
+    transition: 0.3s ease-in-out;
+  }
+  
+  .btn-success-gradient:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+  
+  .link-accent {
+    color: #2563eb;
+    text-decoration: none;
+  }
+  
+  .link-accent:hover {
+    text-decoration: underline;
+  }
+  
