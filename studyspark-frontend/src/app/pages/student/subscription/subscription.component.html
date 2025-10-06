@@ -1,0 +1,169 @@
+<div class="student-layout">
+  <app-sidebar></app-sidebar>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="header-left">
+        <button class="btn-back" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </button>
+        <div>
+          <h1 class="page-title"><i class="bi bi-star"></i> Subscription Plans</h1>
+          <p class="page-subtitle">Choose the plan that fits your needs</p>
+        </div>
+      </div>
+      <div class="header-right" *ngIf="user">
+        <div class="user-info-badge">
+          <div class="user-details">
+            <span class="user-name"><i class="bi bi-person-circle"></i> {{ user.fullname }}</span>
+            <span class="user-id">ID: {{ user.id }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area" *ngIf="!loading">
+      <!-- Current Plan Banner -->
+      <div class="current-plan-banner" *ngIf="currentSubscription">
+        <div class="banner-content">
+          <div class="plan-badge" [class]="'badge-' + currentSubscription.tier">
+            {{ currentSubscription.tier | uppercase }}
+          </div>
+          <h2>Your Current Plan: {{ currentSubscription.plan.name }}</h2>
+          <p *ngIf="currentSubscription.tier !== 'free' && currentSubscription.status === 'active'">
+            <i class="bi bi-calendar-check"></i>
+            {{ getDaysRemaining() }} days remaining
+          </p>
+          <p *ngIf="currentSubscription.tier === 'free'">
+            <i class="bi bi-info-circle"></i>
+            You are currently on the Free plan
+          </p>
+        </div>
+        <button
+          *ngIf="currentSubscription.tier !== 'free' && currentSubscription.status === 'active'"
+          class="btn-cancel"
+          (click)="cancelSubscription()">
+          <i class="bi bi-x-circle"></i> Cancel Subscription
+        </button>
+      </div>
+
+      <!-- Quota Overview -->
+      <div class="quota-overview" *ngIf="currentSubscription">
+        <h3><i class="bi bi-bar-chart"></i> Current Quota</h3>
+        <div class="quota-grid">
+          <div class="quota-item">
+            <i class="bi bi-file-text"></i>
+            <span class="quota-value">{{ currentSubscription.quota.summaries }}</span>
+            <span class="quota-label">Summaries</span>
+          </div>
+          <div class="quota-item">
+            <i class="bi bi-card-list"></i>
+            <span class="quota-value">{{ currentSubscription.quota.flashcards }}</span>
+            <span class="quota-label">Flashcards</span>
+          </div>
+          <div class="quota-item">
+            <i class="bi bi-question-circle"></i>
+            <span class="quota-value">{{ currentSubscription.quota.quizzes }}</span>
+            <span class="quota-label">Quizzes</span>
+          </div>
+          <div class="quota-item">
+            <i class="bi bi-chat-dots"></i>
+            <span class="quota-value">{{ currentSubscription.quota.chats }}</span>
+            <span class="quota-label">Chats</span>
+          </div>
+          <div class="quota-item">
+            <i class="bi bi-calendar-check"></i>
+            <span class="quota-value">{{ currentSubscription.quota.studyPlans }}</span>
+            <span class="quota-label">Study Plans</span>
+          </div>
+          <div class="quota-item">
+            <i class="bi bi-cloud-upload"></i>
+            <span class="quota-value">{{ currentSubscription.quota.maxUploads - currentSubscription.quota.usedUploads }}</span>
+            <span class="quota-label">Uploads Left</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Plans Grid -->
+      <h3 class="section-title"><i class="bi bi-grid"></i> Available Plans</h3>
+      <div class="plans-grid" *ngIf="plans">
+        <!-- Free Plan -->
+        <div class="plan-card free" [class.current]="currentSubscription?.tier === 'free'">
+          <div class="plan-badge">FREE</div>
+          <h3 class="plan-name">{{ plans.free.name }}</h3>
+          <div class="plan-price">
+            <span class="price">${{ plans.free.price }}</span>
+            <span class="period">Forever</span>
+          </div>
+          <ul class="plan-features">
+            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.summaries }} Summaries</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.flashcards }} Flashcards</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.quizzes }} Quizzes</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.chats }} Chats</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.studyPlans }} Study Plans</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.free.quotas.maxUploads }} Max Uploads</li>
+          </ul>
+          <button
+            class="btn-subscribe"
+            [disabled]="currentSubscription?.tier === 'free'"
+            (click)="subscribe('free')">
+            {{ currentSubscription?.tier === 'free' ? 'Current Plan' : 'Downgrade' }}
+          </button>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="plan-card pro" [class.current]="currentSubscription?.tier === 'pro'">
+          <div class="plan-badge popular">POPULAR</div>
+          <h3 class="plan-name">{{ plans.pro.name }}</h3>
+          <div class="plan-price">
+            <span class="price">${{ plans.pro.price }}</span>
+            <span class="period">/ week</span>
+          </div>
+          <ul class="plan-features">
+            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.summaries }} Summaries</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.flashcards }} Flashcards</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.quizzes }} Quizzes</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.chats }} Chats</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.studyPlans }} Study Plans</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.pro.quotas.maxUploads }} Max Uploads</li>
+          </ul>
+          <button
+            class="btn-subscribe"
+            [disabled]="currentSubscription?.tier === 'pro'"
+            (click)="subscribe('pro')">
+            {{ currentSubscription?.tier === 'pro' ? 'Current Plan' : 'Subscribe' }}
+          </button>
+        </div>
+
+        <!-- VIP Plan -->
+        <div class="plan-card vip" [class.current]="currentSubscription?.tier === 'vip'">
+          <div class="plan-badge premium">VIP</div>
+          <h3 class="plan-name">{{ plans.vip.name }}</h3>
+          <div class="plan-price">
+            <span class="price">${{ plans.vip.price }}</span>
+            <span class="period">/ week</span>
+          </div>
+          <ul class="plan-features">
+            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.summaries }} Summaries</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.flashcards }} Flashcards</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.quizzes }} Quizzes</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.chats }} Chats</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.studyPlans }} Study Plans</li>
+            <li><i class="bi bi-check-circle"></i> {{ plans.vip.quotas.maxUploads }} Max Uploads</li>
+          </ul>
+          <button
+            class="btn-subscribe"
+            [disabled]="currentSubscription?.tier === 'vip'"
+            (click)="subscribe('vip')">
+            {{ currentSubscription?.tier === 'vip' ? 'Current Plan' : 'Subscribe' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading" *ngIf="loading">
+      <i class="bi bi-hourglass-split"></i>
+      <p>Loading subscription information...</p>
+    </div>
+  </div>
+</div>

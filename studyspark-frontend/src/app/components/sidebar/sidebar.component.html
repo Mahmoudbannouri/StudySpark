@@ -9,6 +9,18 @@
     </button>
   </div>
 
+  <!-- User Info Section -->
+  <div class="user-info" *ngIf="isSidebarOpen && user">
+    <div class="user-avatar">{{ user.fullname?.charAt(0) }}</div>
+    <div class="user-details">
+      <div class="user-name">{{ user.fullname }}</div>
+      <div class="user-plan" *ngIf="subscription">
+        <i class="bi bi-star-fill"></i>
+        {{ subscription.tier | titlecase }} Plan
+      </div>
+    </div>
+  </div>
+
   <div class="sidebar-menu">
     <a
       *ngFor="let item of menuItems"

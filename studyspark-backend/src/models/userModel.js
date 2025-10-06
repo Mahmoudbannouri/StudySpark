@@ -25,6 +25,22 @@ const User = sequelize.define("User", {
     type: DataTypes.ENUM("student", "admin"),
     defaultValue: "student",
   },
+  subscriptionTier: {
+    type: DataTypes.ENUM("free", "pro", "vip"),
+    defaultValue: "free",
+  },
+  subscriptionStartDate: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  subscriptionEndDate: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  subscriptionStatus: {
+    type: DataTypes.ENUM("active", "expired", "cancelled"),
+    defaultValue: "active",
+  },
 });
 
 

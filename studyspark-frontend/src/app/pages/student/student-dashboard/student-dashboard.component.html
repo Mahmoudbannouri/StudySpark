@@ -13,7 +13,6 @@
     </div>
     <div class="navbar-right">
       <div class="user-menu">
-        <div class="avatar">{{ user?.fullname?.charAt(0) }}</div>
         <span class="user-name">{{ user?.fullname }}</span>
         <button class="btn-logout" (click)="logout()">
           <i class="bi bi-box-arrow-right"></i>
@@ -219,7 +218,7 @@
               <div class="tool-icon bg-purple">
                 <i class="bi bi-chat-dots"></i>
               </div>
-              <h3 class="tool-name">Q&A</h3>
+              <h3 class="tool-name">Intelegent study chat</h3>
             </div>
             <p class="tool-desc">Ask questions and get answers from your document, with web search.</p>
           </div>
@@ -254,15 +253,7 @@
             <p class="tool-desc">Visually organize key concepts with an AI-generated mind map.</p>
           </div>
 
-          <div class="tool-card" (click)="useTool('tutor')">
-            <div class="tool-header">
-              <div class="tool-icon bg-pink">
-                <i class="bi bi-person-video3"></i>
-              </div>
-              <h3 class="tool-name">AI Tutor</h3>
-            </div>
-            <p class="tool-desc">Engage with your document via interactive learning modes to deepen understanding.</p>
-          </div>
+         
 
           <div class="tool-card" (click)="useTool('visualize')">
             <div class="tool-header">

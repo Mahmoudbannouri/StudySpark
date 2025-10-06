@@ -2,6 +2,7 @@ import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component';
+import { AuthService } from '../../../services/auth.service';
 
 interface Message {
   text: string;
@@ -23,6 +24,8 @@ export class ChatbotComponent implements OnInit {
   userInput = '';
   isLoading = false;
   selectedDocument: string | null = null;
+  showDocSelector = false;
+  user: any = null;
 
   // Mock documents list
   documents = [
@@ -31,21 +34,20 @@ export class ChatbotComponent implements OnInit {
     { id: 3, name: 'Physics Lecture Notes.pdf' }
   ];
 
+  constructor(private auth: AuthService) {}
+
   ngOnInit(): void {
-    this.addBotMessage('Hello! 👋 I\'m your AI study assistant. Select a document and ask me any questions about it!');
+    this.user = this.auth.getUserInfo();
+    this.addBotMessage('Hello! 👋 I\'m your AI study assistant powered by RAG (Retrieval-Augmented Generation). I can answer questions about all your uploaded documents! Ask me anything, or optionally select a specific document to focus on.');
   }
 
   selectDocument(doc: any): void {
     this.selectedDocument = doc.name;
-    this.addBotMessage(`Great! I'm now ready to answer questions about "${doc.name}". What would you like to know?`);
+    this.addBotMessage(`Great! I'll now focus on "${doc.name}". But remember, I still have access to all your other documents if needed. What would you like to know?`);
   }
 
   sendMessage(): void {
     if (!this.userInput.trim()) return;
-    if (!this.selectedDocument) {
-      this.addBotMessage('Please select a document first before asking questions.');
-      return;
-    }
 
     const userMessage = this.userInput.trim();
     this.addUserMessage(userMessage);
@@ -63,9 +65,15 @@ export class ChatbotComponent implements OnInit {
   private simulateAIResponse(question: string): void {
     // This is a mock response. In production, this would call your backend RAG model
     const responses = [
-      `Based on the document "${this.selectedDocument}", here's what I found:\n\nThe concept you're asking about is explained in detail on page 12. The key points are: it involves a systematic approach to understanding the fundamentals, and it's important to practice regularly.`,
-      `Great question! According to "${this.selectedDocument}":\n\n1. First, understand the basic principles\n2. Apply them through practical examples\n3. Review regularly to reinforce learning\n\nWould you like me to elaborate on any of these points?`,
-      `From "${this.selectedDocument}", I can see that this topic is covered extensively. The main idea is that consistent study and application of concepts leads to better retention and understanding.`
+      this.selectedDocument
+        ? `Based on "${this.selectedDocument}" and your other uploaded resources, here's what I found:\n\nThe concept you're asking about is explained in detail. The key points are: it involves a systematic approach to understanding the fundamentals, and it's important to practice regularly. I also found related information in your other documents that might help.`
+        : `Based on all your uploaded documents, here's what I found:\n\nThe concept you're asking about appears in several of your materials. The key points are: it involves a systematic approach to understanding the fundamentals, and it's important to practice regularly. The information is most detailed in your lecture notes.`,
+      this.selectedDocument
+        ? `Great question! According to "${this.selectedDocument}":\n\n1. First, understand the basic principles\n2. Apply them through practical examples\n3. Review regularly to reinforce learning\n\nI also found complementary information in your other documents. Would you like me to elaborate?`
+        : `Great question! From analyzing your uploaded documents, I found:\n\n1. First, understand the basic principles\n2. Apply them through practical examples\n3. Review regularly to reinforce learning\n\nThis information comes from multiple sources in your library. Would you like me to be more specific?`,
+      this.selectedDocument
+        ? `From "${this.selectedDocument}" and cross-referencing with your other materials, I can see that this topic is covered extensively. The main idea is that consistent study and application of concepts leads to better retention and understanding.`
+        : `From analyzing all your documents, I can see this topic is covered in multiple places. The main idea is that consistent study and application of concepts leads to better retention and understanding. Let me know if you want me to focus on a specific document!`
     ];
 
     const randomResponse = responses[Math.floor(Math.random() * responses.length)];

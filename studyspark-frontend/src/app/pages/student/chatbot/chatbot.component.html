@@ -5,17 +5,30 @@
     <header class="top-header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="page-title">Q&A Chatbot</h1>
+          <h1 class="page-title">Intelegent Study Chatbot</h1>
           <p class="page-subtitle">Ask questions about your documents</p>
+        </div>
+        <div class="header-right" *ngIf="user">
+          <div class="user-badge">
+            <span class="user-name"><i class="bi bi-person-circle"></i> {{ user.fullname }}</span>
+            <span class="user-id">ID: {{ user.id }}</span>
+          </div>
         </div>
       </div>
     </header>
 
     <div class="content-area">
       <div class="chatbot-container">
-        <!-- Document Selector -->
-        <div class="document-selector" *ngIf="!selectedDocument">
-          <h4 class="mb-3">Select a document to start chatting:</h4>
+        <!-- Optional Document Selector (collapsed by default) -->
+        <div class="document-selector-toggle" *ngIf="!selectedDocument">
+          <button class="btn-toggle-docs" (click)="showDocSelector = !showDocSelector">
+            <i [class]="showDocSelector ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
+            {{ showDocSelector ? 'Hide' : 'Focus on specific document' }} (optional)
+          </button>
+        </div>
+
+        <div class="document-selector" *ngIf="!selectedDocument && showDocSelector">
+          <h4 class="mb-3">Select a document to focus on:</h4>
           <div class="documents-grid">
             <div
               *ngFor="let doc of documents"
@@ -31,9 +44,9 @@
         <!-- Current Document Badge -->
         <div class="current-document" *ngIf="selectedDocument">
           <i class="bi bi-file-text-fill me-2"></i>
-          <span>{{ selectedDocument }}</span>
-          <button class="btn-change" (click)="selectedDocument = null">
-            <i class="bi bi-arrow-left-circle me-1"></i> Change Document
+          <span>Focused on: {{ selectedDocument }}</span>
+          <button class="btn-change" (click)="selectedDocument = null; showDocSelector = false">
+            <i class="bi bi-x-circle me-1"></i> Clear Focus (use all documents)
           </button>
         </div>
 

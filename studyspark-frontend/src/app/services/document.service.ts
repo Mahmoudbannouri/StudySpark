@@ -27,7 +27,7 @@ export class DocumentService {
    * Get all documents for the current user
    */
   getUserDocuments(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/my-documents`, {
+    return this.http.get<any[]>(this.apiUrl, {
       headers: this.auth.getAuthHeaders()
     });
   }
@@ -48,104 +48,5 @@ export class DocumentService {
     return this.http.delete(`${this.apiUrl}/${id}`, {
       headers: this.auth.getAuthHeaders()
     });
-  }
-
-  /**
-   * Generate summary for a document
-   */
-  generateSummary(documentId: number, length: 'short' | 'medium' | 'detailed'): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/${documentId}/summarize`,
-      { length },
-      { headers: this.auth.getAuthHeaders() }
-    );
-  }
-
-  /**
-   * Generate flashcards from a document
-   */
-  generateFlashcards(documentId: number, count: number = 10): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/${documentId}/flashcards`,
-      { count },
-      { headers: this.auth.getAuthHeaders() }
-    );
-  }
-
-  /**
-   * Generate quiz from a document
-   */
-  generateQuiz(documentId: number, count: number = 10): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/${documentId}/quiz`,
-      { count },
-      { headers: this.auth.getAuthHeaders() }
-    );
-  }
-
-  /**
-   * Ask a question about a document (RAG chatbot)
-   */
-  askQuestion(documentId: number, question: string, useWebSearch: boolean = false): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/${documentId}/ask`,
-      { question, useWebSearch },
-      { headers: this.auth.getAuthHeaders() }
-    );
-  }
-
-  /**
-   * Generate a study plan
-   */
-  generateStudyPlan(documentId: number, examDate: string): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/${documentId}/study-plan`,
-      { examDate },
-      { headers: this.auth.getAuthHeaders() }
-    );
-  }
-
-  /**
-   * Generate a mind map
-   */
-  generateMindMap(documentId: number): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/${documentId}/mind-map`,
-      {},
-      { headers: this.auth.getAuthHeaders() }
-    );
-  }
-
-  /**
-   * Transcribe audio/video file
-   */
-  transcribeMedia(documentId: number): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/${documentId}/transcribe`,
-      {},
-      { headers: this.auth.getAuthHeaders() }
-    );
-  }
-
-  /**
-   * AI Tutor interaction
-   */
-  aiTutorInteraction(documentId: number, mode: string, input: string): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/${documentId}/tutor`,
-      { mode, input },
-      { headers: this.auth.getAuthHeaders() }
-    );
-  }
-
-  /**
-   * Generate concept visualization
-   */
-  visualizeConcept(documentId: number, concept: string): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/${documentId}/visualize`,
-      { concept },
-      { headers: this.auth.getAuthHeaders() }
-    );
   }
 }

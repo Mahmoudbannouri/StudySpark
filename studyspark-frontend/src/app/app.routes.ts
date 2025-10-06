@@ -6,9 +6,11 @@ import { AdminDashboardComponent } from './pages/admin/admin-dashboard/admin-das
 import { StudentDashboardComponent } from './pages/student/student-dashboard/student-dashboard.component';
 import { UploadComponent } from './pages/student/upload/upload.component';
 import { ChatbotComponent } from './pages/student/chatbot/chatbot.component';
+import { SummarizerComponent } from './pages/student/summarizer/summarizer.component';
 import { AuthGuard } from './guards/auth.guard';
 import { LogoutComponent } from './pages/auth/logout/logout.component';
 import { SessionPageComponent } from './pages/session/session-page.component';
+import { SubscriptionComponent } from './pages/student/subscription/subscription.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -20,15 +22,16 @@ export const routes: Routes = [
 
   // Student routes
   { path: 'student', component: StudentDashboardComponent, canActivate: [AuthGuard] },
+  { path: 'student/dashboard', component: StudentDashboardComponent, canActivate: [AuthGuard] },
+  { path: 'student/subscription', component: SubscriptionComponent, canActivate: [AuthGuard] },
   { path: 'student/upload', component: UploadComponent, canActivate: [AuthGuard] },
   { path: 'student/chatbot', component: ChatbotComponent, canActivate: [AuthGuard] },
+  { path: 'student/summarizer', component: SummarizerComponent, canActivate: [AuthGuard] },
   { path: 'student/documents', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create documents page
-  { path: 'student/summarizer', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create summarizer page
   { path: 'student/flashcards', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create flashcards page
   { path: 'student/quiz', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create quiz page
   { path: 'student/study-plan', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create study plan page
   { path: 'student/mind-map', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create mind map page
-  { path: 'student/tutor', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create AI tutor page
   { path: 'student/transcribe', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create transcribe page
   { path: 'student/visualize', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create visualize page
 

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/banno/OneDrive/Bureau/projects/StudySpark/studyspark-backend/src/**)",
+      "Read(//c/Users/banno/OneDrive/Bureau/projects/StudySpark/studyspark-backend/**)",
+      "Bash(ng generate component:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

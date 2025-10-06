@@ -26,6 +26,16 @@ interface Activity {
   data?: any;
 }
 
+interface Quota {
+  summaries: number;
+  flashcards: number;
+  quizzes: number;
+  chats: number;
+  studyPlans: number;
+  maxUploads: number;
+  usedUploads: number;
+}
+
 @Component({
   selector: 'app-student-dashboard',
   standalone: true,
@@ -35,7 +45,7 @@ interface Activity {
 })
 export class StudentDashboardComponent implements OnInit {
   user: any;
-  quota: any;
+  quota: Quota | null = null;
   searchQuery = '';
 
   // Documents
@@ -63,9 +73,12 @@ export class StudentDashboardComponent implements OnInit {
     this.loadQuota();
     this.loadDocuments();
 
-    // Animation
+    // Animation with explicit final state
     setTimeout(() => {
-      gsap.from('.welcome-section', { opacity: 0, y: 30, duration: 0.8 });
+      gsap.fromTo('.welcome-section',
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }
+      );
     }, 100);
   }
 
@@ -187,14 +200,21 @@ export class StudentDashboardComponent implements OnInit {
   selectDocument(doc: Document): void {
     this.selectedDocument = doc;
 
-    // Animate tools
+    // Animate tools with fromTo to ensure final state
     setTimeout(() => {
-      gsap.from('.tool-card', {
-        opacity: 0,
-        y: 20,
-        duration: 0.4,
-        stagger: 0.1
-      });
+      gsap.fromTo('.tool-card',
+        {
+          opacity: 0,
+          y: 20
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.4,
+          stagger: 0.1,
+          ease: 'power2.out'
+        }
+      );
     }, 100);
   }
 
@@ -228,11 +248,29 @@ export class StudentDashboardComponent implements OnInit {
   }
 
   useTool(toolType: string): void {
-    if (!this.selectedDocument) return;
+    // Check quota before allowing tool usage
+    if (!this.checkQuota(toolType)) {
+      return;
+    }
 
-    // Store selected document ID in session or service for the tool page
+    // QNA/Chatbot doesn't require a selected document (RAG uses all user documents)
+    if (toolType === 'qna') {
+      this.router.navigate(['/student/chatbot']);
+      return;
+    }
+
+    // Other tools require a document to be selected
+    if (!this.selectedDocument) {
+      Swal.fire('Info', 'Please select a document first', 'info');
+      return;
+    }
+
+    // Store selected document ID and user info in session for the tool page
     sessionStorage.setItem('selectedDocumentId', this.selectedDocument.id.toString());
     sessionStorage.setItem('selectedDocumentName', this.selectedDocument.name);
+    sessionStorage.setItem('userId', this.user.id.toString());
+    sessionStorage.setItem('userFullname', this.user.fullname);
+    sessionStorage.setItem('userRole', this.user.role);
 
     // Navigate to the appropriate tool page
     switch (toolType) {
@@ -248,11 +286,6 @@ export class StudentDashboardComponent implements OnInit {
         break;
       case 'quiz':
         this.router.navigate(['/student/quiz'], {
-          queryParams: { docId: this.selectedDocument.id }
-        });
-        break;
-      case 'qna':
-        this.router.navigate(['/student/chatbot'], {
           queryParams: { docId: this.selectedDocument.id }
         });
         break;
@@ -289,6 +322,57 @@ export class StudentDashboardComponent implements OnInit {
   viewActivity(activity: Activity): void {
     Swal.fire('Activity', `Viewing ${activity.name}`, 'info');
     // TODO: Navigate to the specific activity result
+  }
+
+  checkQuota(toolType: string): boolean {
+    if (!this.quota) {
+      Swal.fire('Error', 'Could not load quota information', 'error');
+      return false;
+    }
+
+    // Map tool types to quota fields
+    const quotaMapping: { [key: string]: { field: keyof Quota, name: string } } = {
+      'summary': { field: 'summaries', name: 'Summaries' },
+      'flashcards': { field: 'flashcards', name: 'Flashcards' },
+      'quiz': { field: 'quizzes', name: 'Quizzes' },
+      'qna': { field: 'chats', name: 'Chat Messages' }
+    };
+
+    const mapping = quotaMapping[toolType];
+    if (!mapping) {
+      return true; // No quota check for other tools
+    }
+
+    const remaining = this.quota[mapping.field];
+
+    if (remaining <= 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Quota Limit Reached',
+        html: `You have reached your ${mapping.name} quota limit.<br><br>
+               <strong>Current Quota:</strong><br>
+               Summaries: ${this.quota.summaries}<br>
+               Flashcards: ${this.quota.flashcards}<br>
+               Quizzes: ${this.quota.quizzes}<br>
+               Chats: ${this.quota.chats}<br><br>
+               Please contact your administrator to increase your quota.`,
+        confirmButtonText: 'OK'
+      });
+      return false;
+    }
+
+    // Show warning if quota is low (less than 5)
+    if (remaining < 5) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Low Quota Warning',
+        text: `You have ${remaining} ${mapping.name} remaining`,
+        timer: 3000,
+        showConfirmButton: false
+      });
+    }
+
+    return true;
   }
 
   getDocIcon(type: string): string {

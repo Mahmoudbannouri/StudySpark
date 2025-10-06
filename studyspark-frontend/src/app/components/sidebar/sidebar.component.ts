@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { SubscriptionService } from '../../services/subscription.service';
 
 interface MenuItem {
   icon: string;
@@ -17,28 +18,46 @@ interface MenuItem {
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.scss']
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   isSidebarOpen = true;
+  user: any = null;
+  subscription: any = null;
 
   menuItems: MenuItem[] = [
     { icon: 'bi-house-door', label: 'Dashboard', route: '/student' },
+    { icon: 'bi-star', label: 'My Subscription', route: '/student/subscription' },
     { icon: 'bi-cloud-upload', label: 'Upload Document', route: '/student/upload' },
-    { icon: 'bi-folder', label: 'My Documents', route: '/student/documents' },
+    { icon: 'bi-chat-dots', label: 'Q&A Chatbot', route: '/student/chatbot' },
     { icon: 'bi-file-text', label: 'Summarizer', route: '/student/summarizer' },
     { icon: 'bi-card-list', label: 'Flashcards', route: '/student/flashcards' },
     { icon: 'bi-question-circle', label: 'Quiz Generator', route: '/student/quiz' },
-    { icon: 'bi-chat-dots', label: 'Q&A Chatbot', route: '/student/chatbot' },
     { icon: 'bi-calendar-check', label: 'Study Plan', route: '/student/study-plan' },
     { icon: 'bi-diagram-3', label: 'Mind Map', route: '/student/mind-map' },
-    { icon: 'bi-person-video3', label: 'AI Tutor', route: '/student/tutor' },
     { icon: 'bi-camera-video', label: 'Transcribe Media', route: '/student/transcribe' },
     { icon: 'bi-image', label: 'Visualize Concepts', route: '/student/visualize' },
   ];
 
   constructor(
     private router: Router,
-    private auth: AuthService
+    private auth: AuthService,
+    private subscriptionService: SubscriptionService
   ) {}
+
+  ngOnInit(): void {
+    this.user = this.auth.getUserInfo();
+    this.loadSubscription();
+  }
+
+  loadSubscription(): void {
+    this.subscriptionService.getMySubscription().subscribe({
+      next: (data) => {
+        this.subscription = data;
+      },
+      error: () => {
+        console.error('Failed to load subscription');
+      }
+    });
+  }
 
   toggleSidebar(): void {
     this.isSidebarOpen = !this.isSidebarOpen;

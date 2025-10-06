@@ -42,4 +42,36 @@ export class SessionService {
   get fullname() {
     return this.auth.getUserInfo()?.fullname;
   }
+
+  get email() {
+    return this.auth.getUserInfo()?.email;
+  }
+
+  get userInfo() {
+    return this.auth.getUserInfo();
+  }
+
+  /** ✅ Get selected document from session storage */
+  getSelectedDocument() {
+    return {
+      id: sessionStorage.getItem('selectedDocumentId'),
+      name: sessionStorage.getItem('selectedDocumentName')
+    };
+  }
+
+  /** ✅ Store user info in session storage for easy access across components */
+  storeUserSession() {
+    const user = this.userInfo;
+    if (user) {
+      sessionStorage.setItem('userId', user.id?.toString() || '');
+      sessionStorage.setItem('userFullname', user.fullname || '');
+      sessionStorage.setItem('userEmail', user.email || '');
+      sessionStorage.setItem('userRole', user.role || '');
+    }
+  }
+
+  /** ✅ Clear session storage */
+  clearSession() {
+    sessionStorage.clear();
+  }
 }

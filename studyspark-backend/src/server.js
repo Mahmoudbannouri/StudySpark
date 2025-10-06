@@ -7,10 +7,23 @@ import sequelize from "./config/db.js";
 // 🧩 Models
 import "./models/userModel.js";
 import "./models/Quota.js";
+import "./models/Document.js";
+import "./models/Summary.js";
+import "./models/Flashcard.js";
+import "./models/Quiz.js";
+import "./models/ChatMessage.js";
+import "./models/StudyPlan.js";
+import "./models/MindMap.js";
 
 // 🧩 Routes
 import userRoutes from "./routes/userRoutes.js";
 import quotaRoutes from "./routes/quotaRoutes.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import documentRoutes from "./routes/documentRoutes.js";
+import summaryRoutes from "./routes/summaryRoutes.js";
+import flashcardRoutes from "./routes/flashcardRoutes.js";
+import quizRoutes from "./routes/quizRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -21,6 +34,12 @@ app.use(express.json());
 // ✅ Register routes
 app.use("/api/users", userRoutes);
 app.use("/api/quotas", quotaRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/documents", documentRoutes);
+app.use("/api/summaries", summaryRoutes);
+app.use("/api/flashcards", flashcardRoutes);
+app.use("/api/quizzes", quizRoutes);
+app.use("/api/chat", chatRoutes);
 
 // ✅ DB Connection + Auto Sync
 sequelize

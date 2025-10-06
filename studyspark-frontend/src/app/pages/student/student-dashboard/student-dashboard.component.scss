@@ -326,6 +326,7 @@
 .welcome-section {
   max-width: 900px;
   margin: 0 auto;
+  opacity: 1 !important; // Force full opacity
 
   .welcome-content {
     text-align: center;
@@ -504,6 +505,7 @@
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       border: 2px solid transparent;
+      opacity: 1 !important; // Force full opacity
 
       &:hover {
         transform: translateY(-6px);
