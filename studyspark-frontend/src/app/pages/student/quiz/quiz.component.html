@@ -1,1 +1,365 @@
-<p>quiz works!</p>
+<div class="student-layout">
+  <app-sidebar></app-sidebar>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">AI Quiz Generator</h1>
+          <p class="page-subtitle">Test your knowledge with AI-generated quizzes</p>
+        </div>
+        <div class="header-right" *ngIf="user">
+          <div class="user-badge">
+            <span class="user-name"><i class="bi bi-person-circle"></i> {{ user.fullname }}</span>
+            <span class="user-id">ID: {{ user.id }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <div class="quiz-container">
+        <!-- Generate Quiz Section -->
+        <div class="generate-section" *ngIf="!currentQuiz">
+          <div class="generate-card">
+            <h3><i class="bi bi-magic"></i> Generate Quiz</h3>
+            <p class="text-muted">AI will create a quiz from your documents</p>
+
+            <div class="form-group">
+              <label>Select Document</label>
+              <select [(ngModel)]="selectedDocumentId" class="form-control">
+                <option [value]="null">Choose a document...</option>
+                <option *ngFor="let doc of availableDocuments" [value]="doc.id">
+                  {{ doc.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Number of Questions</label>
+              <input
+                type="number"
+                [(ngModel)]="numberOfQuestions"
+                min="10"
+                max="50"
+                class="form-control"
+                placeholder="e.g., 20">
+            </div>
+
+            <div class="form-group">
+              <label>Difficulty Level</label>
+              <div class="difficulty-options">
+                <button
+                  class="difficulty-btn"
+                  [class.active]="difficulty === 'easy'"
+                  (click)="difficulty = 'easy'">
+                  <i class="bi bi-brightness-high"></i>
+                  Easy
+                </button>
+                <button
+                  class="difficulty-btn"
+                  [class.active]="difficulty === 'medium'"
+                  (click)="difficulty = 'medium'">
+                  <i class="bi bi-bar-chart"></i>
+                  Medium
+                </button>
+                <button
+                  class="difficulty-btn"
+                  [class.active]="difficulty === 'hard'"
+                  (click)="difficulty = 'hard'">
+                  <i class="bi bi-lightning"></i>
+                  Hard
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Question Types</label>
+              <div class="question-types">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="questionTypes.multipleChoice">
+                  <span>Multiple Choice</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="questionTypes.trueFalse">
+                  <span>True/False</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="questionTypes.shortAnswer">
+                  <span>Short Answer</span>
+                </label>
+              </div>
+            </div>
+
+            <button
+              class="btn-generate"
+              (click)="generateQuiz()"
+              [disabled]="!selectedDocumentId || generating || !hasSelectedQuestionType()">
+              <i [class]="generating ? 'bi bi-hourglass-split' : 'bi bi-play-circle'"></i>
+              {{ generating ? 'Generating...' : 'Generate Quiz' }}
+            </button>
+          </div>
+
+          <!-- Saved Quizzes -->
+          <div class="saved-quizzes" *ngIf="savedQuizzes.length > 0">
+            <h3><i class="bi bi-journal-check"></i> Saved Quizzes</h3>
+            <div class="quizzes-grid">
+              <div
+                class="quiz-card"
+                *ngFor="let quiz of savedQuizzes"
+                (click)="loadQuiz(quiz)">
+                <div class="quiz-icon">
+                  <i class="bi bi-clipboard-check"></i>
+                </div>
+                <div class="quiz-info">
+                  <h4>{{ quiz.name }}</h4>
+                  <p>{{ quiz.totalQuestions }} questions</p>
+                  <div class="quiz-meta">
+                    <span class="difficulty-badge" [class]="'difficulty-' + quiz.difficulty">
+                      {{ quiz.difficulty }}
+                    </span>
+                    <span *ngIf="quiz.score !== null" class="score-badge">
+                      Score: {{ quiz.score }}%
+                    </span>
+                  </div>
+                </div>
+                <button class="btn-delete" (click)="deleteQuiz(quiz.id, $event)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz Taking Section -->
+        <div class="quiz-section" *ngIf="currentQuiz && quizMode && !showResults">
+          <div class="quiz-header">
+            <div class="quiz-progress">
+              <h3>{{ currentQuiz.name }}</h3>
+              <div class="progress-info">
+                <span class="question-counter">
+                  Question {{ currentQuestionIndex + 1 }} / {{ currentQuiz.totalQuestions }}
+                </span>
+                <span class="timer" *ngIf="timeRemaining > 0">
+                  <i class="bi bi-clock"></i> {{ formatTime(timeRemaining) }}
+                </span>
+              </div>
+              <div class="progress-bar-container">
+                <div class="progress-bar" [style.width.%]="getProgressPercentage()"></div>
+              </div>
+            </div>
+            <button class="btn-exit" (click)="exitQuiz()">
+              <i class="bi bi-x-circle"></i> Exit
+            </button>
+          </div>
+
+          <div class="question-display">
+            <div class="question-card">
+              <div class="question-header">
+                <span class="question-type-badge">{{ getCurrentQuestion()?.type }}</span>
+                <span class="question-number">#{{ currentQuestionIndex + 1 }}</span>
+              </div>
+
+              <div class="question-text">
+                <p>{{ getCurrentQuestion()?.text }}</p>
+              </div>
+
+              <!-- Multiple Choice Options -->
+              <div class="answer-options" *ngIf="getCurrentQuestion()?.type === 'multiple-choice'">
+                <div
+                  class="option"
+                  *ngFor="let option of getCurrentQuestion()?.options; let i = index"
+                  [class.selected]="getCurrentQuestion()?.userAnswer === option"
+                  (click)="selectAnswer(option)">
+                  <span class="option-letter">{{ getOptionLetter(i) }}</span>
+                  <span class="option-text">{{ option }}</span>
+                </div>
+              </div>
+
+              <!-- True/False Options -->
+              <div class="answer-options" *ngIf="getCurrentQuestion()?.type === 'true-false'">
+                <div
+                  class="option"
+                  [class.selected]="getCurrentQuestion()?.userAnswer === 'True'"
+                  (click)="selectAnswer('True')">
+                  <span class="option-letter">T</span>
+                  <span class="option-text">True</span>
+                </div>
+                <div
+                  class="option"
+                  [class.selected]="getCurrentQuestion()?.userAnswer === 'False'"
+                  (click)="selectAnswer('False')">
+                  <span class="option-letter">F</span>
+                  <span class="option-text">False</span>
+                </div>
+              </div>
+
+              <!-- Short Answer -->
+              <div class="answer-input" *ngIf="getCurrentQuestion()?.type === 'short-answer'">
+                <textarea
+                  [(ngModel)]="getCurrentQuestion()!.userAnswer"
+                  class="form-control"
+                  rows="4"
+                  placeholder="Type your answer here..."></textarea>
+              </div>
+            </div>
+
+            <div class="navigation-buttons">
+              <button
+                class="nav-btn btn-secondary"
+                (click)="previousQuestion()"
+                [disabled]="currentQuestionIndex === 0">
+                <i class="bi bi-chevron-left"></i> Previous
+              </button>
+
+              <button
+                class="nav-btn btn-primary"
+                *ngIf="currentQuestionIndex < currentQuiz.totalQuestions - 1"
+                (click)="nextQuestion()">
+                Next <i class="bi bi-chevron-right"></i>
+              </button>
+
+              <button
+                class="nav-btn btn-success"
+                *ngIf="currentQuestionIndex === currentQuiz.totalQuestions - 1"
+                (click)="submitQuiz()">
+                <i class="bi bi-check-circle"></i> Submit Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" *ngIf="showResults && currentQuiz">
+          <div class="results-card">
+            <div class="results-header">
+              <div class="score-display">
+                <div class="score-circle" [class]="getScoreClass()">
+                  <span class="score-value">{{ currentQuiz.score }}%</span>
+                </div>
+                <h2>Quiz Completed!</h2>
+                <p class="score-message">{{ getScoreMessage() }}</p>
+              </div>
+            </div>
+
+            <div class="results-stats">
+              <div class="stat-card">
+                <i class="bi bi-check-circle-fill green"></i>
+                <div>
+                  <span class="stat-value">{{ getCorrectAnswers() }}</span>
+                  <span class="stat-label">Correct</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <i class="bi bi-x-circle-fill red"></i>
+                <div>
+                  <span class="stat-value">{{ getIncorrectAnswers() }}</span>
+                  <span class="stat-label">Incorrect</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <i class="bi bi-clock-fill blue"></i>
+                <div>
+                  <span class="stat-value">{{ formatTime(1800 - timeRemaining) }}</span>
+                  <span class="stat-label">Time Taken</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="results-actions">
+              <button class="btn-action btn-primary" (click)="retakeQuiz()">
+                <i class="bi bi-arrow-clockwise"></i> Retake Quiz
+              </button>
+              <button class="btn-action" (click)="backToSelection()">
+                <i class="bi bi-house"></i> Back to Home
+              </button>
+            </div>
+
+            <!-- Question Review -->
+            <div class="question-review">
+              <h3><i class="bi bi-list-check"></i> Review Answers</h3>
+              <div class="review-list">
+                <div
+                  class="review-item"
+                  *ngFor="let question of currentQuiz.questions; let i = index"
+                  [class.correct]="isAnswerCorrect(question)"
+                  [class.incorrect]="!isAnswerCorrect(question)">
+                  <div class="review-header">
+                    <span class="review-number">#{{ i + 1 }}</span>
+                    <span class="review-status">
+                      <i [class]="isAnswerCorrect(question) ? 'bi bi-check-circle-fill' : 'bi bi-x-circle-fill'"></i>
+                      {{ isAnswerCorrect(question) ? 'Correct' : 'Incorrect' }}
+                    </span>
+                  </div>
+                  <div class="review-question">
+                    <strong>Q:</strong> {{ question.text }}
+                  </div>
+                  <div class="review-answer">
+                    <div class="answer-row">
+                      <strong>Your Answer:</strong>
+                      <span [class.wrong]="!isAnswerCorrect(question)">{{ question.userAnswer || 'Not answered' }}</span>
+                    </div>
+                    <div class="answer-row correct-answer">
+                      <strong>Correct Answer:</strong>
+                      <span>{{ question.correctAnswer }}</span>
+                    </div>
+                  </div>
+                  <div class="review-explanation" *ngIf="question.explanation">
+                    <strong><i class="bi bi-lightbulb"></i> Explanation:</strong>
+                    <p>{{ question.explanation }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz Overview (not taking) -->
+        <div class="quiz-overview" *ngIf="currentQuiz && !quizMode && !showResults">
+          <div class="overview-card">
+            <div class="overview-header">
+              <div>
+                <h3><i class="bi bi-clipboard-check"></i> {{ currentQuiz.name }}</h3>
+                <p class="quiz-meta">
+                  {{ currentQuiz.totalQuestions }} questions •
+                  {{ currentQuiz.difficulty }} difficulty
+                </p>
+              </div>
+              <button class="btn-start" (click)="startQuiz()">
+                <i class="bi bi-play-circle"></i> Start Quiz
+              </button>
+            </div>
+
+            <div class="overview-info">
+              <div class="info-item">
+                <i class="bi bi-clock"></i>
+                <div>
+                  <strong>Time Limit</strong>
+                  <span>30 minutes</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-check-square"></i>
+                <div>
+                  <strong>Questions</strong>
+                  <span>{{ currentQuiz.totalQuestions }} total</span>
+                </div>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-bar-chart"></i>
+                <div>
+                  <strong>Difficulty</strong>
+                  <span>{{ currentQuiz.difficulty }}</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-back" (click)="backToSelection()">
+              <i class="bi bi-arrow-left"></i> Back to Quizzes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

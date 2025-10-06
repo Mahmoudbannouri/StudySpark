@@ -15,6 +15,8 @@ import { StudyPlanComponent } from './pages/student/study-plan/study-plan.compon
 import { TranscribeComponent } from './pages/student/transcribe/transcribe.component';
 import { FlashcardsComponent } from './pages/student/flashcards/flashcards.component';
 import { QuizComponent } from './pages/student/quiz/quiz.component';
+import { MindMapComponent } from './pages/student/mind-map/mind-map.component';
+import { VisualizeComponent } from './pages/student/visualize/visualize.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -35,9 +37,9 @@ export const routes: Routes = [
   { path: 'student/flashcards', component: FlashcardsComponent, canActivate: [AuthGuard] },
   { path: 'student/quiz', component: QuizComponent, canActivate: [AuthGuard] },
   { path: 'student/study-plan', component: StudyPlanComponent, canActivate: [AuthGuard] },
-  { path: 'student/mind-map', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create mind map page
+  { path: 'student/mind-map', component: MindMapComponent, canActivate: [AuthGuard] },
   { path: 'student/transcribe', component: TranscribeComponent, canActivate: [AuthGuard] },
-  { path: 'student/visualize', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create visualize page
+  { path: 'student/visualize', component: VisualizeComponent, canActivate: [AuthGuard] },
 
   // Session route
   { path: 'session', component: SessionPageComponent, canActivate: [AuthGuard] },

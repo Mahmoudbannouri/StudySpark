@@ -1,0 +1,344 @@
+<div class="visualize-container">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">📊 AI Data Visualizer</h1>
+          <p class="page-subtitle">Transform your data into insightful visual representations</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Generation Section -->
+    <section class="generation-section" *ngIf="visualizations.length === 0 || generating">
+      <div class="generation-card">
+        <div class="card-header">
+          <h2>Generate Visualizations</h2>
+          <p>Select your data source and visualization preferences</p>
+        </div>
+
+        <div class="generation-form">
+          <div class="form-group">
+            <label for="document-select">Select Data Source</label>
+            <select
+              id="document-select"
+              [(ngModel)]="selectedDocumentId"
+              class="form-select">
+              <option value="">Choose a document...</option>
+              <option *ngFor="let doc of availableDocuments" [value]="doc.id">
+                {{ doc.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Visualization Types</label>
+            <div class="checkbox-group">
+              <label class="checkbox-item">
+                <input type="checkbox" [(ngModel)]="visualizationTypes.progress">
+                <span>📈 Progress Tracking</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" [(ngModel)]="visualizationTypes.distribution">
+                <span>🥧 Distribution Analysis</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" [(ngModel)]="visualizationTypes.comparison">
+                <span>🎯 Skills Comparison</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" [(ngModel)]="visualizationTypes.timeline">
+                <span>📅 Timeline View</span>
+              </label>
+            </div>
+          </div>
+
+          <button
+            class="generate-btn"
+            [disabled]="!selectedDocumentId || generating"
+            (click)="generateVisualizations()">
+            <span *ngIf="!generating">✨ Generate Visualizations</span>
+            <span *ngIf="generating">
+              <span class="spinner"></span> Generating...
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visualizations Gallery -->
+    <section class="gallery-section" *ngIf="visualizations.length > 0 && !generating">
+      <div class="gallery-header">
+        <h2>Your Visualizations</h2>
+        <div class="gallery-actions">
+          <button (click)="resetView()" class="action-btn">🔄 Reset</button>
+          <button (click)="downloadChart('png')" class="action-btn primary">💾 Export All</button>
+        </div>
+      </div>
+
+      <div class="gallery-grid">
+        <div
+          *ngFor="let viz of visualizations"
+          class="gallery-card"
+          [class.active]="selectedVisualization?.id === viz.id"
+          (click)="selectChart(viz)">
+          <div class="card-thumbnail">
+            <div class="chart-icon">
+              <span *ngIf="viz.type === 'bar'">📊</span>
+              <span *ngIf="viz.type === 'line'">📈</span>
+              <span *ngIf="viz.type === 'pie'">🥧</span>
+              <span *ngIf="viz.type === 'radar'">🎯</span>
+            </div>
+          </div>
+          <div class="card-info">
+            <h3>{{ viz.title }}</h3>
+            <p>{{ viz.description }}</p>
+            <span class="chart-type-badge">{{ viz.type }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detail View -->
+    <section class="detail-section" *ngIf="selectedVisualization && !generating">
+      <div class="detail-card">
+        <div class="detail-header">
+          <div class="title-info">
+            <h2>{{ selectedVisualization.title }}</h2>
+            <p>{{ selectedVisualization.description }}</p>
+          </div>
+          <div class="chart-controls">
+            <div class="export-group">
+              <button (click)="downloadChart('png')" class="control-btn">PNG</button>
+              <button (click)="downloadChart('pdf')" class="control-btn">PDF</button>
+              <button (click)="downloadChart('csv')" class="control-btn">CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart Display -->
+        <div class="chart-container">
+          <!-- Bar Chart -->
+          <svg
+            *ngIf="selectedVisualization.type === 'bar'"
+            viewBox="0 0 800 300"
+            class="chart-svg">
+            <g *ngFor="let bar of getBarChartBars()">
+              <rect
+                [attr.x]="bar.x"
+                [attr.y]="bar.y"
+                [attr.width]="bar.width"
+                [attr.height]="bar.height"
+                [attr.fill]="bar.color"
+                class="chart-bar"/>
+              <text
+                [attr.x]="bar.x + bar.width / 2"
+                [attr.y]="bar.y - 5"
+                class="bar-label"
+                text-anchor="middle">
+                {{ bar.value }}
+              </text>
+            </g>
+            <line x1="40" y1="260" x2="760" y2="260" stroke="#e5e7eb" stroke-width="2"/>
+            <line x1="40" y1="40" x2="40" y2="260" stroke="#e5e7eb" stroke-width="2"/>
+          </svg>
+
+          <!-- Line Chart -->
+          <svg
+            *ngIf="selectedVisualization.type === 'line'"
+            viewBox="0 0 800 300"
+            class="chart-svg">
+            <defs>
+              <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:rgba(99, 102, 241, 0.3);stop-opacity:1" />
+                <stop offset="100%" style="stop-color:rgba(99, 102, 241, 0);stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <g *ngFor="let line of getLineChartPaths()">
+              <path
+                [attr.d]="line.path"
+                [attr.stroke]="line.color"
+                stroke-width="3"
+                fill="none"
+                class="chart-line"/>
+              <circle
+                *ngFor="let point of line.points"
+                [attr.cx]="point.x"
+                [attr.cy]="point.y"
+                r="5"
+                [attr.fill]="line.color"
+                class="chart-point"/>
+            </g>
+            <line x1="40" y1="260" x2="760" y2="260" stroke="#e5e7eb" stroke-width="2"/>
+            <line x1="40" y1="40" x2="40" y2="260" stroke="#e5e7eb" stroke-width="2"/>
+          </svg>
+
+          <!-- Pie Chart -->
+          <svg
+            *ngIf="selectedVisualization.type === 'pie'"
+            viewBox="0 0 400 350"
+            class="chart-svg">
+            <g *ngFor="let slice of getPieChartSlices()">
+              <path
+                [attr.d]="slice.path"
+                [attr.fill]="slice.color"
+                class="pie-slice"/>
+              <text
+                [attr.x]="slice.labelX"
+                [attr.y]="slice.labelY"
+                class="pie-label"
+                text-anchor="middle"
+                fill="white"
+                font-weight="bold">
+                {{ slice.percentage }}%
+              </text>
+            </g>
+          </svg>
+
+          <!-- Radar Chart -->
+          <svg
+            *ngIf="selectedVisualization.type === 'radar'"
+            viewBox="0 0 400 350"
+            class="chart-svg">
+            <g *ngFor="let radarPath of getRadarChartPaths()">
+              <!-- Web background -->
+              <path
+                *ngFor="let webPath of radarPath.webPaths"
+                [attr.d]="webPath.path"
+                stroke="#e5e7eb"
+                stroke-width="1"
+                fill="none"/>
+
+              <!-- Axes -->
+              <g *ngFor="let axis of radarPath.axesPaths">
+                <path
+                  [attr.d]="axis.path"
+                  stroke="#d1d5db"
+                  stroke-width="1"/>
+                <text
+                  [attr.x]="axis.labelX"
+                  [attr.y]="axis.labelY"
+                  class="radar-label"
+                  text-anchor="middle"
+                  font-size="12"
+                  fill="#6b7280">
+                  {{ axis.label }}
+                </text>
+              </g>
+
+              <!-- Data -->
+              <path
+                [attr.d]="radarPath.path"
+                [attr.stroke]="radarPath.color"
+                [attr.fill]="radarPath.fillColor"
+                stroke-width="2"
+                class="radar-path"/>
+
+              <circle
+                *ngFor="let point of radarPath.points"
+                [attr.cx]="point.x"
+                [attr.cy]="point.y"
+                r="4"
+                [attr.fill]="radarPath.color"
+                class="radar-point"/>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Chart Legend -->
+        <div class="chart-legend" *ngIf="selectedVisualization.data.datasets.length > 1">
+          <div class="legend-items">
+            <div
+              *ngFor="let dataset of selectedVisualization.data.datasets"
+              class="legend-item">
+              <span
+                class="legend-color"
+                [style.background]="dataset.borderColor || dataset.backgroundColor"></span>
+              <span>{{ dataset.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Insights Panel -->
+        <div class="insights-panel">
+          <h3>📌 Key Insights</h3>
+          <ul class="insights-list">
+            <li *ngFor="let insight of selectedVisualization.insights">
+              {{ insight }}
+            </li>
+          </ul>
+        </div>
+
+        <!-- Statistics Panel -->
+        <div class="statistics-panel">
+          <h3>📊 Statistics</h3>
+          <div class="stats-grid">
+            <div class="stat-card" *ngFor="let column of getDataTableColumns()">
+              <div class="stat-label">{{ column }}</div>
+              <div class="stat-values">
+                <div class="stat-item">
+                  <span class="stat-name">Total:</span>
+                  <span class="stat-value">{{ calculateTotal(column) | number:'1.0-1' }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-name">Average:</span>
+                  <span class="stat-value">{{ calculateAverage(column) | number:'1.0-1' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="data-table-container">
+          <h3>📋 Data Table</h3>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Label</th>
+                  <th *ngFor="let column of getDataTableColumns()">{{ column }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getDataTableRows()">
+                  <td class="row-label">{{ row.label }}</td>
+                  <td *ngFor="let column of getDataTableColumns()" class="row-value">
+                    {{ row[column] }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Empty State -->
+    <section class="empty-state" *ngIf="visualizations.length === 0 && !generating">
+      <div class="empty-content">
+        <div class="empty-icon">📊</div>
+        <h2>Create Your First Visualization</h2>
+        <p>Transform your study data into beautiful, insightful charts</p>
+        <ul class="features-list">
+          <li>📈 Multiple chart types available</li>
+          <li>🎨 Customizable visualizations</li>
+          <li>💡 AI-powered insights</li>
+          <li>💾 Export in multiple formats</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Loading State -->
+    <section class="loading-state" *ngIf="generating">
+      <div class="loading-content">
+        <div class="spinner-large"></div>
+        <h2>Generating Visualizations...</h2>
+        <p>Analyzing your data and creating beautiful charts</p>
+      </div>
+    </section>
+  </main>
+</div>

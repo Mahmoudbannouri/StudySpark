@@ -7,6 +7,7 @@ import sequelize from "./config/db.js";
 // 🧩 Models
 import "./models/userModel.js";
 import "./models/Quota.js";
+import "./models/Subscription.js";
 import "./models/Document.js";
 import "./models/Summary.js";
 import "./models/Flashcard.js";

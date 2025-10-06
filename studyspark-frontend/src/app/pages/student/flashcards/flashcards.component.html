@@ -1,1 +1,303 @@
-<p>flashcards works!</p>
+<div class="student-layout">
+  <app-sidebar></app-sidebar>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">🎴 AI Flashcards</h1>
+          <p class="page-subtitle">Auto-generated flashcards from your documents</p>
+        </div>
+        <div class="header-right" *ngIf="user">
+          <div class="user-badge">
+            <span class="user-name"><i class="bi bi-person-circle"></i> {{ user.fullname }}</span>
+            <span class="user-id">ID: {{ user.id }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <div class="flashcards-container">
+        <!-- Generate Flashcards Section -->
+        <div class="generate-section" *ngIf="!currentDeck">
+          <div class="generate-card">
+            <h3><i class="bi bi-stars"></i> Generate Flashcards</h3>
+            <p class="text-muted">AI will create flashcards from your documents</p>
+
+            <div class="form-group">
+              <label>Select Document</label>
+              <select [(ngModel)]="selectedDocumentId" class="form-control">
+                <option value="">Choose a document...</option>
+                <option *ngFor="let doc of availableDocuments" [value]="doc.id">
+                  {{ doc.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Number of Cards</label>
+              <input
+                type="number"
+                [(ngModel)]="numberOfCards"
+                min="5"
+                max="50"
+                class="form-control"
+                placeholder="e.g., 20">
+            </div>
+
+            <div class="form-group">
+              <label>Difficulty Level</label>
+              <div class="difficulty-options">
+                <button
+                  class="difficulty-btn"
+                  [class.active]="difficulty === 'easy'"
+                  (click)="difficulty = 'easy'">
+                  <i class="bi bi-brightness-high"></i>
+                  Easy
+                </button>
+                <button
+                  class="difficulty-btn"
+                  [class.active]="difficulty === 'medium'"
+                  (click)="difficulty = 'medium'">
+                  <i class="bi bi-bar-chart"></i>
+                  Medium
+                </button>
+                <button
+                  class="difficulty-btn"
+                  [class.active]="difficulty === 'hard'"
+                  (click)="difficulty = 'hard'">
+                  <i class="bi bi-lightning"></i>
+                  Hard
+                </button>
+              </div>
+            </div>
+
+            <button
+              class="btn-generate"
+              (click)="generateFlashcards()"
+              [disabled]="!selectedDocumentId || generating">
+              <i [class]="generating ? 'bi bi-hourglass-split' : 'bi bi-magic'"></i>
+              {{ generating ? 'Generating...' : 'Generate Flashcards' }}
+            </button>
+          </div>
+
+          <!-- Saved Decks -->
+          <div class="saved-decks" *ngIf="savedDecks.length > 0">
+            <h3><i class="bi bi-collection"></i> Saved Decks</h3>
+            <div class="decks-grid">
+              <div
+                class="deck-card"
+                *ngFor="let deck of savedDecks"
+                (click)="loadDeck(deck)">
+                <div class="deck-icon">
+                  <i class="bi bi-layers"></i>
+                </div>
+                <div class="deck-info">
+                  <h4>{{ deck.name }}</h4>
+                  <p>{{ deck.cards.length }} cards</p>
+                  <div class="deck-stats">
+                    <span class="stat">
+                      <i class="bi bi-check-circle"></i> {{ deck.mastered }}
+                    </span>
+                    <span class="stat">
+                      <i class="bi bi-clock-history"></i> {{ deck.reviewing }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Study Mode -->
+        <div class="study-section" *ngIf="currentDeck && studyMode">
+          <div class="study-header">
+            <div class="study-progress">
+              <h3>{{ currentDeck.name }}</h3>
+              <div class="progress-bar-container">
+                <div class="progress-bar" [style.width.%]="progressPercentage"></div>
+              </div>
+              <p class="progress-text">{{ currentCardIndex + 1 }} / {{ currentDeck.cards.length }}</p>
+            </div>
+            <button class="btn-exit" (click)="exitStudyMode()">
+              <i class="bi bi-x-circle"></i> Exit
+            </button>
+          </div>
+
+          <div class="flashcard-display">
+            <div class="card-wrapper">
+              <div class="flashcard" [class.flipped]="isFlipped" (click)="flipCard()">
+                <div class="card-face card-front">
+                  <div class="card-label">Question</div>
+                  <div class="card-content">
+                    <p>{{ getCurrentCard()?.question }}</p>
+                  </div>
+                  <div class="card-hint">Click to reveal answer</div>
+                </div>
+                <div class="card-face card-back">
+                  <div class="card-label">Answer</div>
+                  <div class="card-content">
+                    <p>{{ getCurrentCard()?.answer }}</p>
+                  </div>
+                  <div class="card-explanation" *ngIf="getCurrentCard()?.explanation">
+                    <strong>Explanation:</strong>
+                    <p>{{ getCurrentCard()?.explanation }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-actions" *ngIf="isFlipped">
+              <button class="action-btn btn-hard" (click)="rateCard('hard')">
+                <i class="bi bi-x-circle"></i>
+                Hard
+              </button>
+              <button class="action-btn btn-medium" (click)="rateCard('medium')">
+                <i class="bi bi-dash-circle"></i>
+                Medium
+              </button>
+              <button class="action-btn btn-easy" (click)="rateCard('easy')">
+                <i class="bi bi-check-circle"></i>
+                Easy
+              </button>
+            </div>
+
+            <div class="navigation-buttons">
+              <button
+                class="nav-btn"
+                (click)="previousCard()"
+                [disabled]="currentCardIndex === 0">
+                <i class="bi bi-chevron-left"></i> Previous
+              </button>
+              <button
+                class="nav-btn"
+                (click)="nextCard()"
+                [disabled]="currentCardIndex === currentDeck.cards.length - 1">
+                Next <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deck Overview -->
+        <div class="deck-overview" *ngIf="currentDeck && !studyMode">
+          <div class="overview-header">
+            <div>
+              <h3><i class="bi bi-collection"></i> {{ currentDeck.name }}</h3>
+              <p class="deck-meta">
+                {{ currentDeck.cards.length }} cards •
+                {{ currentDeck.difficulty }} difficulty
+              </p>
+            </div>
+            <div class="header-actions">
+              <button class="btn-action btn-primary" (click)="startStudyMode()">
+                <i class="bi bi-play-circle"></i> Start Study
+              </button>
+              <button class="btn-action" (click)="shuffleDeck()">
+                <i class="bi bi-shuffle"></i> Shuffle
+              </button>
+              <button class="btn-action" (click)="exportDeck()">
+                <i class="bi bi-download"></i> Export
+              </button>
+              <button class="btn-action btn-danger" (click)="currentDeck && deleteDeck(currentDeck.id, $event)">
+                <i class="bi bi-trash"></i> Delete
+              </button>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="deck-stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon green">
+                <i class="bi bi-check-circle-fill"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ currentDeck.mastered }}</span>
+                <span class="stat-label">Mastered</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon yellow">
+                <i class="bi bi-clock-history"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ currentDeck.reviewing }}</span>
+                <span class="stat-label">Reviewing</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon red">
+                <i class="bi bi-x-circle-fill"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ currentDeck.learning }}</span>
+                <span class="stat-label">Learning</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cards List -->
+          <div class="cards-list">
+            <h4>All Cards</h4>
+            <div class="cards-grid">
+              <div class="card-preview" *ngFor="let card of currentDeck.cards; let i = index">
+                <div class="card-number">#{{ i + 1 }}</div>
+                <div class="card-preview-content">
+                  <div class="preview-question">
+                    <strong>Q:</strong> {{ card.question }}
+                  </div>
+                  <div class="preview-answer">
+                    <strong>A:</strong> {{ card.answer }}
+                  </div>
+                </div>
+                <div class="card-status" [class]="'status-' + card.status">
+                  {{ card.status }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-back" (click)="backToSelection()">
+            <i class="bi bi-arrow-left"></i> Back to Decks
+          </button>
+        </div>
+
+        <!-- Completion Screen -->
+        <div class="completion-screen" *ngIf="showCompletion">
+          <div class="completion-card">
+            <div class="completion-icon">
+              <i class="bi bi-trophy-fill"></i>
+            </div>
+            <h2>Study Session Complete!</h2>
+            <p>Great job! You've reviewed all {{ currentDeck?.cards?.length || 0 }} cards.</p>
+
+            <div class="completion-stats">
+              <div class="completion-stat">
+                <span class="stat-label">Easy</span>
+                <span class="stat-value green">{{ sessionStats.easy }}</span>
+              </div>
+              <div class="completion-stat">
+                <span class="stat-label">Medium</span>
+                <span class="stat-value yellow">{{ sessionStats.medium }}</span>
+              </div>
+              <div class="completion-stat">
+                <span class="stat-label">Hard</span>
+                <span class="stat-value red">{{ sessionStats.hard }}</span>
+              </div>
+            </div>
+
+            <div class="completion-actions">
+              <button class="btn-action btn-primary" (click)="restartStudy()">
+                <i class="bi bi-arrow-clockwise"></i> Study Again
+              </button>
+              <button class="btn-action" (click)="finishStudy()">
+                <i class="bi bi-check-circle"></i> Finish
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

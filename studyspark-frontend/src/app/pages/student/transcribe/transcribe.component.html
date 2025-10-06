@@ -1,1 +1,255 @@
-<p>transcribe works!</p>
+<div class="student-layout">
+  <app-sidebar></app-sidebar>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">🎥 Video Transcription & Notes</h1>
+          <p class="page-subtitle">Convert lectures and videos into searchable notes</p>
+        </div>
+        <div class="header-right" *ngIf="user">
+          <div class="user-badge">
+            <span class="user-name"><i class="bi bi-person-circle"></i> {{ user.fullname }}</span>
+            <span class="user-id">ID: {{ user.id }}</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <div class="transcribe-container">
+        <!-- Upload Section -->
+        <div class="upload-section" *ngIf="!currentTranscription">
+          <div class="upload-card">
+            <h3><i class="bi bi-cloud-upload"></i> Upload Video</h3>
+            <p class="text-muted">Support for MP4, AVI, MOV, YouTube links</p>
+
+            <div class="upload-methods">
+              <!-- File Upload -->
+              <div class="upload-method" [class.active]="uploadMethod === 'file'" (click)="uploadMethod = 'file'">
+                <i class="bi bi-file-earmark-arrow-up"></i>
+                <span>Upload File</span>
+              </div>
+
+              <!-- YouTube Link -->
+              <div class="upload-method" [class.active]="uploadMethod === 'youtube'" (click)="uploadMethod = 'youtube'">
+                <i class="bi bi-youtube"></i>
+                <span>YouTube Link</span>
+              </div>
+
+              <!-- Record -->
+              <div class="upload-method" [class.active]="uploadMethod === 'record'" (click)="uploadMethod = 'record'">
+                <i class="bi bi-record-circle"></i>
+                <span>Record Video</span>
+              </div>
+            </div>
+
+            <!-- File Upload Content -->
+            <div class="upload-content" *ngIf="uploadMethod === 'file'">
+              <div class="drop-zone" (click)="fileInput.click()" (dragover)="onDragOver($event)" (drop)="onDrop($event)">
+                <i class="bi bi-cloud-upload-fill"></i>
+                <p>Drag & drop your video here</p>
+                <span class="text-muted">or click to browse</span>
+                <input #fileInput type="file" accept="video/*" (change)="onFileSelected($event)" hidden>
+              </div>
+
+              <div class="selected-file" *ngIf="selectedFile">
+                <i class="bi bi-film"></i>
+                <span>{{ selectedFile.name }}</span>
+                <button class="btn-remove" (click)="removeFile()">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- YouTube Link Content -->
+            <div class="upload-content" *ngIf="uploadMethod === 'youtube'">
+              <div class="form-group">
+                <label>YouTube URL</label>
+                <input
+                  type="text"
+                  [(ngModel)]="youtubeUrl"
+                  class="form-control"
+                  placeholder="https://www.youtube.com/watch?v=...">
+              </div>
+            </div>
+
+            <!-- Record Content -->
+            <div class="upload-content" *ngIf="uploadMethod === 'record'">
+              <div class="record-controls">
+                <button class="btn-record" [class.recording]="isRecording" (click)="toggleRecording()">
+                  <i [class]="isRecording ? 'bi bi-stop-circle-fill' : 'bi bi-record-circle'"></i>
+                  {{ isRecording ? 'Stop Recording' : 'Start Recording' }}
+                </button>
+                <span class="record-time" *ngIf="isRecording">{{ recordingTime }}</span>
+              </div>
+            </div>
+
+            <!-- Transcription Options -->
+            <div class="transcription-options">
+              <h4>Transcription Options</h4>
+
+              <div class="option-row">
+                <label>
+                  <input type="checkbox" [(ngModel)]="options.timestamps">
+                  Include Timestamps
+                </label>
+                <label>
+                  <input type="checkbox" [(ngModel)]="options.speakers">
+                  Detect Speakers
+                </label>
+              </div>
+
+              <div class="option-row">
+                <label>
+                  <input type="checkbox" [(ngModel)]="options.summary">
+                  Auto-generate Summary
+                </label>
+                <label>
+                  <input type="checkbox" [(ngModel)]="options.keyPoints">
+                  Extract Key Points
+                </label>
+              </div>
+
+              <div class="form-group">
+                <label>Language</label>
+                <select [(ngModel)]="options.language" class="form-control">
+                  <option value="en">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                  <option value="ar">Arabic</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              class="btn-start-transcription"
+              (click)="startTranscription()"
+              [disabled]="!canStartTranscription() || processing">
+              <i [class]="processing ? 'bi bi-hourglass-split' : 'bi bi-play-circle'"></i>
+              {{ processing ? 'Processing...' : 'Start Transcription' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Transcription Result -->
+        <div class="transcription-result" *ngIf="currentTranscription">
+          <div class="result-header">
+            <div>
+              <h3><i class="bi bi-file-text"></i> {{ currentTranscription.title }}</h3>
+              <p class="meta">
+                <span><i class="bi bi-clock"></i> {{ currentTranscription.duration }}</span>
+                <span><i class="bi bi-calendar"></i> {{ currentTranscription.date | date: 'short' }}</span>
+              </p>
+            </div>
+            <div class="header-actions">
+              <button class="btn-action" (click)="downloadTranscription()">
+                <i class="bi bi-download"></i> Download
+              </button>
+              <button class="btn-action" (click)="copyTranscription()">
+                <i class="bi bi-clipboard"></i> Copy
+              </button>
+              <button class="btn-action btn-new" (click)="startNew()">
+                <i class="bi bi-plus-circle"></i> New
+              </button>
+            </div>
+          </div>
+
+          <!-- Video Preview -->
+          <div class="video-preview" *ngIf="currentTranscription.videoUrl">
+            <video controls [src]="currentTranscription.videoUrl"></video>
+          </div>
+
+          <!-- Tabs -->
+          <div class="result-tabs">
+            <button
+              class="tab-btn"
+              [class.active]="activeTab === 'transcription'"
+              (click)="activeTab = 'transcription'">
+              <i class="bi bi-file-text"></i> Transcription
+            </button>
+            <button
+              class="tab-btn"
+              [class.active]="activeTab === 'summary'"
+              (click)="activeTab = 'summary'">
+              <i class="bi bi-card-text"></i> Summary
+            </button>
+            <button
+              class="tab-btn"
+              [class.active]="activeTab === 'keyPoints'"
+              (click)="activeTab = 'keyPoints'">
+              <i class="bi bi-list-check"></i> Key Points
+            </button>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="tab-content">
+            <!-- Transcription Tab -->
+            <div class="transcription-text" *ngIf="activeTab === 'transcription'">
+              <div class="search-bar">
+                <i class="bi bi-search"></i>
+                <input
+                  type="text"
+                  [(ngModel)]="searchQuery"
+                  placeholder="Search in transcription...">
+              </div>
+
+              <div class="text-content">
+                <div
+                  class="text-segment"
+                  *ngFor="let segment of currentTranscription.segments"
+                  [class.highlight]="isHighlighted(segment)">
+                  <span class="timestamp" *ngIf="options.timestamps">{{ segment.timestamp }}</span>
+                  <span class="speaker" *ngIf="options.speakers && segment.speaker">{{ segment.speaker }}:</span>
+                  <span class="text">{{ segment.text }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Summary Tab -->
+            <div class="summary-content" *ngIf="activeTab === 'summary'">
+              <div class="summary-card">
+                <h4>AI-Generated Summary</h4>
+                <p>{{ currentTranscription.summary }}</p>
+              </div>
+            </div>
+
+            <!-- Key Points Tab -->
+            <div class="key-points-content" *ngIf="activeTab === 'keyPoints'">
+              <ul class="key-points-list">
+                <li *ngFor="let point of currentTranscription.keyPoints">
+                  <i class="bi bi-check-circle-fill"></i>
+                  {{ point }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transcriptions -->
+        <div class="recent-transcriptions" *ngIf="!currentTranscription && recentTranscriptions.length > 0">
+          <h3><i class="bi bi-clock-history"></i> Recent Transcriptions</h3>
+          <div class="transcriptions-grid">
+            <div
+              class="transcription-card"
+              *ngFor="let trans of recentTranscriptions"
+              (click)="loadTranscription(trans)">
+              <div class="card-thumbnail">
+                <i class="bi bi-film"></i>
+              </div>
+              <div class="card-content">
+                <h4>{{ trans.title }}</h4>
+                <p class="card-meta">
+                  <span><i class="bi bi-clock"></i> {{ trans.duration }}</span>
+                  <span><i class="bi bi-calendar"></i> {{ trans.date | date: 'short' }}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

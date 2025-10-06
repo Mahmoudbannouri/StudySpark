@@ -1,0 +1,293 @@
+<div class="mind-map-container">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <!-- Header -->
+    <header class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">🧠 AI Mind Map Generator</h1>
+          <p class="page-subtitle">Visualize complex concepts and their relationships</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Generation Section -->
+    <section class="generation-section" *ngIf="!currentMindMap || !generating">
+      <div class="generation-card">
+        <div class="card-header">
+          <h2>Generate Mind Map</h2>
+          <p>Create an interactive mind map from your study materials</p>
+        </div>
+
+        <div class="generation-form">
+          <div class="form-group">
+            <label for="document-select">Select Document</label>
+            <select
+              id="document-select"
+              [(ngModel)]="selectedDocumentId"
+              class="form-select">
+              <option value="">Choose a document...</option>
+              <option *ngFor="let doc of availableDocuments" [value]="doc.id">
+                {{ doc.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="complexity-slider">Complexity Level</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                id="complexity-slider"
+                [(ngModel)]="complexity"
+                min="simple"
+                max="detailed"
+                class="slider">
+              <div class="slider-labels">
+                <span [class.active]="complexity === 'simple'">Simple</span>
+                <span [class.active]="complexity === 'medium'">Medium</span>
+                <span [class.active]="complexity === 'detailed'">Detailed</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            class="generate-btn"
+            [disabled]="!selectedDocumentId || generating"
+            (click)="generateMindMap()">
+            <span *ngIf="!generating">✨ Generate Mind Map</span>
+            <span *ngIf="generating">
+              <span class="spinner"></span> Generating...
+            </span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mind Map Visualization -->
+    <section class="visualization-section" *ngIf="currentMindMap">
+      <!-- Control Panel -->
+      <div class="control-panel">
+        <div class="control-group">
+          <label>View Mode:</label>
+          <div class="view-buttons">
+            <button
+              [class.active]="viewMode === 'tree'"
+              (click)="changeView('tree')"
+              class="control-btn">
+              🌳 Tree
+            </button>
+            <button
+              [class.active]="viewMode === 'radial'"
+              (click)="changeView('radial')"
+              class="control-btn">
+              ⭕ Radial
+            </button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Zoom:</label>
+          <div class="zoom-buttons">
+            <button (click)="zoomOut()" class="control-btn">−</button>
+            <span class="zoom-level">{{ (zoomLevel * 100) | number:'1.0-0' }}%</span>
+            <button (click)="zoomIn()" class="control-btn">+</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <button (click)="resetView()" class="control-btn">🔄 Reset</button>
+          <button (click)="exportImage()" class="control-btn primary">💾 Export</button>
+        </div>
+      </div>
+
+      <!-- Canvas -->
+      <div class="canvas-container" (click)="clearSelection()">
+        <svg
+          [attr.width]="svgWidth"
+          [attr.height]="svgHeight"
+          [attr.viewBox]="'0 0 ' + svgWidth + ' ' + svgHeight"
+          class="mind-map-canvas">
+
+          <defs>
+            <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+            </linearGradient>
+
+            <filter id="nodeShadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+              <feOffset dx="0" dy="2" result="offsetblur"/>
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="0.3"/>
+              </feComponentTransfer>
+              <feMerge>
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <g [attr.transform]="'scale(' + zoomLevel + ') translate(' + panX + ',' + panY + ')'">
+            <!-- Connections -->
+            <g class="connections">
+              <path
+                *ngFor="let conn of getConnections()"
+                [attr.d]="'M ' + conn.from.x + ' ' + conn.from.y +
+                          ' Q ' + ((conn.from.x + conn.to.x) / 2) + ' ' + ((conn.from.y + conn.to.y) / 2) +
+                          ' ' + conn.to.x + ' ' + conn.to.y"
+                class="connection-line"
+                [style.stroke]="conn.from.color"
+                stroke-width="2"
+                fill="none"
+                opacity="0.6"/>
+            </g>
+
+            <!-- Nodes -->
+            <g class="nodes">
+              <g *ngFor="let node of getAllNodes()"
+                 class="node-group"
+                 [class.selected]="selectedNode?.id === node.id"
+                 [class.has-children]="node.children.length > 0"
+                 (click)="selectNode(node, $event)">
+
+                <!-- Node Circle -->
+                <circle
+                  [attr.cx]="node.x"
+                  [attr.cy]="node.y"
+                  [attr.r]="getNodeRadius(node.level)"
+                  [attr.fill]="node.color"
+                  class="node-circle"
+                  filter="url(#nodeShadow)"/>
+
+                <!-- Node Label -->
+                <text
+                  [attr.x]="node.x"
+                  [attr.y]="node.y"
+                  class="node-label"
+                  text-anchor="middle"
+                  dominant-baseline="middle">
+                  {{ node.label }}
+                </text>
+
+                <!-- Expand/Collapse Indicator -->
+                <g *ngIf="node.children.length > 0"
+                   class="expand-indicator"
+                   (click)="toggleNode(node, $event)">
+                  <circle
+                    [attr.cx]="node.x + getNodeRadius(node.level) - 15"
+                    [attr.cy]="node.y + getNodeRadius(node.level) - 15"
+                    r="12"
+                    fill="white"
+                    stroke="#6366f1"
+                    stroke-width="2"/>
+                  <text
+                    [attr.x]="node.x + getNodeRadius(node.level) - 15"
+                    [attr.y]="node.y + getNodeRadius(node.level) - 15"
+                    class="expand-icon"
+                    text-anchor="middle"
+                    dominant-baseline="middle">
+                    {{ node.expanded ? '−' : '+' }}
+                  </text>
+                </g>
+              </g>
+            </g>
+          </g>
+        </svg>
+
+        <!-- Legend -->
+        <div class="legend">
+          <h3>Legend</h3>
+          <div class="legend-items">
+            <div class="legend-item">
+              <span class="legend-color" style="background: #6366f1;"></span>
+              <span>Main Topic</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background: #8b5cf6;"></span>
+              <span>Category</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background: #a855f7;"></span>
+              <span>Subcategory</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background: #ec4899;"></span>
+              <span>Details</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side Panel - Node Details -->
+      <aside class="side-panel" [class.visible]="selectedNode">
+        <div class="panel-header">
+          <h3>Node Details</h3>
+          <button class="close-btn" (click)="clearSelection()">✕</button>
+        </div>
+
+        <div class="panel-content" *ngIf="selectedNode">
+          <div class="node-info">
+            <div class="node-title" [style.color]="selectedNode.color">
+              {{ selectedNode.label }}
+            </div>
+
+            <div class="node-level">
+              <span class="label">Level:</span>
+              <span class="value">{{ selectedNode.level }}</span>
+            </div>
+
+            <div class="node-description">
+              <h4>Description</h4>
+              <p>{{ selectedNode.description || 'No description available.' }}</p>
+            </div>
+
+            <div class="node-children" *ngIf="selectedNode.children.length > 0">
+              <h4>Child Concepts ({{ selectedNode.children.length }})</h4>
+              <ul>
+                <li *ngFor="let child of selectedNode.children">
+                  <span [style.color]="child.color">●</span> {{ child.label }}
+                </li>
+              </ul>
+            </div>
+
+            <div class="node-actions">
+              <button
+                *ngIf="selectedNode.children.length > 0 && !selectedNode.expanded"
+                (click)="expandNode(selectedNode)"
+                class="action-btn">
+                Expand Node
+              </button>
+              <button
+                *ngIf="selectedNode.children.length > 0 && selectedNode.expanded"
+                (click)="collapseNode(selectedNode)"
+                class="action-btn">
+                Collapse Node
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-empty" *ngIf="!selectedNode">
+          <p>Click on a node to view details</p>
+        </div>
+      </aside>
+    </section>
+
+    <!-- Empty State -->
+    <section class="empty-state" *ngIf="!currentMindMap && !generating">
+      <div class="empty-content">
+        <div class="empty-icon">🧠</div>
+        <h2>Create Your First Mind Map</h2>
+        <p>Transform your study materials into interactive visual maps</p>
+        <ul class="features-list">
+          <li>📚 Select any document from your library</li>
+          <li>🎨 Choose complexity level</li>
+          <li>🔍 Explore concepts interactively</li>
+          <li>💾 Export and share your mind maps</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>

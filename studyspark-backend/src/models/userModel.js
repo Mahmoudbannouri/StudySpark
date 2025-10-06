@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../config/db.js";
-import Quota from "./Quota.js"; // add this line
+import Quota from "./Quota.js";
 
 const User = sequelize.define("User", {
   id: {
@@ -26,7 +26,7 @@ const User = sequelize.define("User", {
     defaultValue: "student",
   },
   subscriptionTier: {
-    type: DataTypes.ENUM("free", "pro", "vip"),
+    type: DataTypes.ENUM("free", "basic", "premium", "enterprise"),
     defaultValue: "free",
   },
   subscriptionStartDate: {
@@ -47,5 +47,12 @@ const User = sequelize.define("User", {
 // 🔗 Relations
 User.hasOne(Quota, { foreignKey: "userId", onDelete: "CASCADE" });
 Quota.belongsTo(User, { foreignKey: "userId" });
+
+// Import Subscription after User is defined to avoid circular dependency
+import("./Subscription.js").then((module) => {
+  const Subscription = module.default;
+  User.hasMany(Subscription, { foreignKey: "userId", onDelete: "CASCADE" });
+  Subscription.belongsTo(User, { foreignKey: "userId" });
+});
 
 export default User;
