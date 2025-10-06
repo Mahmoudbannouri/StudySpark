@@ -1,0 +1,81 @@
+.student-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8f9fc 0%, #ffffff 100%);
+}
+
+.dashboard-container {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.welcome-section {
+  text-align: center;
+  padding: 2rem 0;
+
+  h2 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+
+    @media (max-width: 768px) {
+      font-size: 1.8rem;
+    }
+  }
+
+  p {
+    font-size: 1.1rem;
+  }
+}
+
+.tools-section {
+  margin-top: 3rem;
+
+  h4 {
+    color: #334155;
+    font-size: 1.5rem;
+  }
+}
+
+.tool-card {
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.2);
+
+    .tool-icon {
+      transform: scale(1.1);
+    }
+  }
+
+  .tool-icon {
+    font-size: 3.5rem;
+    transition: transform 0.3s ease;
+  }
+
+  h5 {
+    color: #1e293b;
+    font-size: 1.1rem;
+  }
+
+  .btn {
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

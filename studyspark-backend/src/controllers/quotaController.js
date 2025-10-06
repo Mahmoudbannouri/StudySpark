@@ -10,7 +10,17 @@ export const getQuotaByUser = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
+// 📄 GET /api/quotas/me
+export const getMyQuota = async (req, res) => {
+    try {
+      const quota = await Quota.findOne({ where: { userId: req.user.id } });
+      if (!quota) return res.status(404).json({ message: "Quota not found" });
+      res.json(quota);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  };
+  
 export const updateQuota = async (req, res) => {
   try {
     const quota = await Quota.findOne({ where: { userId: req.params.id } });

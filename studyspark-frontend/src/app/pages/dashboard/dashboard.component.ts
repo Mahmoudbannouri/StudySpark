@@ -5,20 +5,15 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [],
-  templateUrl: './dashboard.component.html'
+  template: `<div class="loading">Redirecting...</div>`,
+  styles: [`.loading { text-align:center; margin-top:50px; font-weight:bold; }`]
 })
 export class DashboardComponent implements OnInit {
-  role = '';
-
   constructor(private auth: AuthService, private router: Router) {}
 
   ngOnInit(): void {
-    this.role = this.auth.getRole() || 'student';
-  }
-
-  logout(): void {
-    this.auth.logout();
-    this.router.navigateByUrl('/login');
+    const user = this.auth.getUserInfo();
+    if (user?.role === 'admin') this.router.navigate(['/admin']);
+    else this.router.navigate(['/student']);
   }
 }

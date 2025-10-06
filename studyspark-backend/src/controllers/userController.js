@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import User from "../models/userModel.js";
 import { generateToken } from "../utils/jwt.js";
+import Quota from "../models/Quota.js"; // ✅ ADD THIS LINE
 
 // 🧠 Register Controller
 export const registeruser = async (req, res) => {

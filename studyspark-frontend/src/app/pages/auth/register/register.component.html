@@ -2,9 +2,12 @@
   <div class="floating-shape"></div>
   <div class="floating-shape delay"></div>
 
-  <div class="auth-card shadow-lg p-4 rounded-4">
-    <h2 class="text-center mb-3 fw-bold text-gradient-green">🧠 Join StudySpark</h2>
-    <p class="text-center text-muted mb-4">Create your learning space today</p>
+  <div class="auth-card shadow-lg p-5 rounded-4">
+    <div class="text-center mb-4">
+      <div class="auth-icon mb-3">🧠</div>
+      <h2 class="fw-bold text-gradient-green mb-2">Join StudySpark</h2>
+      <p class="text-muted">Create your learning space today</p>
+    </div>
 
     <form (ngSubmit)="onRegister()">
       <div class="mb-3">
@@ -13,21 +16,24 @@
                [(ngModel)]="fullname" name="fullname" required placeholder="John Doe" />
       </div>
       <div class="mb-3">
-        <label class="form-label fw-semibold">Email</label>
+        <label class="form-label fw-semibold">Email Address</label>
         <input type="email" class="form-control form-control-lg rounded-3"
                [(ngModel)]="email" name="email" required placeholder="student@email.com" />
       </div>
-      <div class="mb-3">
+      <div class="mb-4">
         <label class="form-label fw-semibold">Password</label>
         <input type="password" class="form-control form-control-lg rounded-3"
                [(ngModel)]="password" name="password" required placeholder="••••••••" />
       </div>
-      <button class="btn btn-success-gradient w-100 mt-3 py-2 fw-semibold">Register</button>
-      <p class="text-center mt-3 text-muted">
-        Already have an account?
-        <a routerLink="/login" class="fw-semibold link-accent">Login</a>
-      </p>
-      
+      <button type="submit" class="btn btn-success-gradient w-100 py-3 fw-semibold rounded-3">
+        Create Account
+      </button>
+      <div class="text-center mt-4">
+        <p class="text-muted mb-0">
+          Already have an account?
+          <a routerLink="/login" class="fw-semibold link-accent ms-1">Sign in</a>
+        </p>
+      </div>
     </form>
   </div>
 </div>

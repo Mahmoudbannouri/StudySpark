@@ -1,0 +1,24 @@
+<div class="container py-5">
+    <div class="session-card shadow-sm p-4 rounded bg-white">
+      <h3 class="fw-bold text-primary mb-3">🔐 Active Session Details</h3>
+  
+      <div *ngIf="session">
+        <p><strong>User ID:</strong> {{ session.decoded.id }}</p>
+        <p><strong>Fullname:</strong> {{ session.decoded.fullname }}</p>
+        <p><strong>Role:</strong> <span class="badge bg-info">{{ session.decoded.role }}</span></p>
+        <p><strong>Email:</strong> {{ session.decoded.email }}</p>
+        <p><strong>Token Expires:</strong> {{ session.expiry | date:'medium' }}</p>
+        <p><strong>Is Expired:</strong> {{ session.isExpired ? '❌ Expired' : '✅ Active' }}</p>
+  
+        <div class="mt-4">
+          <label class="fw-semibold">🔑 Raw Token:</label>
+          <pre class="bg-light p-2 rounded">{{ session.token }}</pre>
+        </div>
+      </div>
+  
+      <div class="text-end mt-4">
+        <button class="btn btn-outline-danger px-4" (click)="logout()">🚪 Logout</button>
+      </div>
+    </div>
+  </div>
+  

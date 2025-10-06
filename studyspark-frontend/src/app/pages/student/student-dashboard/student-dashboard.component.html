@@ -1,0 +1,70 @@
+<div class="student-page">
+  <!-- Top Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-gradient-primary shadow-sm">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand fw-bold" href="#">
+        <span class="brand-icon">⚡</span> StudySpark
+      </a>
+      <div class="d-flex align-items-center gap-3">
+        <span class="text-white-50 d-none d-md-inline">{{ user?.email }}</span>
+        <div class="user-badge">
+          <span class="fw-semibold">{{ user?.fullname }}</span>
+        </div>
+        <button class="btn btn-outline-light btn-sm rounded-pill" (click)="logout()">
+          <i class="bi bi-box-arrow-right me-1"></i> Logout
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="dashboard-container container py-5">
+    <div class="welcome-section mb-5">
+      <h2 class="fw-bold text-gradient mb-2">🎓 Welcome back, {{ user?.fullname }}!</h2>
+      <p class="text-muted">Ready to enhance your learning journey?</p>
+    </div>
+
+    <div *ngIf="quota" class="mb-5">
+      <app-quota-card [quota]="quota"></app-quota-card>
+    </div>
+
+    <div class="tools-section">
+      <h4 class="fw-semibold mb-4 text-center">Your AI-Powered Study Tools</h4>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-3">
+          <div class="tool-card shadow-sm rounded-4 p-4 text-center h-100">
+            <div class="tool-icon mb-3">📄</div>
+            <h5 class="fw-semibold mb-2">Summarizer</h5>
+            <p class="text-muted small mb-3">Get concise summaries of your study materials</p>
+            <button class="btn btn-outline-primary btn-sm rounded-pill">Launch</button>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="tool-card shadow-sm rounded-4 p-4 text-center h-100">
+            <div class="tool-icon mb-3">🧠</div>
+            <h5 class="fw-semibold mb-2">Flashcards</h5>
+            <p class="text-muted small mb-3">Create smart flashcards for better retention</p>
+            <button class="btn btn-outline-success btn-sm rounded-pill">Launch</button>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="tool-card shadow-sm rounded-4 p-4 text-center h-100">
+            <div class="tool-icon mb-3">🗓</div>
+            <h5 class="fw-semibold mb-2">Study Plan</h5>
+            <p class="text-muted small mb-3">Generate personalized study schedules</p>
+            <button class="btn btn-outline-info btn-sm rounded-pill">Launch</button>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+          <div class="tool-card shadow-sm rounded-4 p-4 text-center h-100">
+            <div class="tool-icon mb-3">🤖</div>
+            <h5 class="fw-semibold mb-2">Quiz Generator</h5>
+            <p class="text-muted small mb-3">Test your knowledge with AI quizzes</p>
+            <button class="btn btn-outline-warning btn-sm rounded-pill">Launch</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  
