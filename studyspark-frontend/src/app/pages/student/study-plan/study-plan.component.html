@@ -19,68 +19,9 @@
 
     <div class="content-area">
       <div class="study-plan-container">
-        <!-- Create Study Plan Card -->
-        <div class="create-plan-card" *ngIf="!currentPlan">
-          <h3><i class="bi bi-plus-circle"></i> Create Your Study Plan</h3>
-          <p class="text-muted">Let AI help you organize your study schedule</p>
-
-          <div class="form-group">
-            <label>Select Documents to Study</label>
-            <div class="documents-checklist">
-              <div class="document-checkbox" *ngFor="let doc of availableDocuments">
-                <input
-                  type="checkbox"
-                  [id]="'doc-' + doc.id"
-                  [(ngModel)]="doc.selected">
-                <label [for]="'doc-' + doc.id">
-                  <i class="bi bi-file-text"></i>
-                  {{ doc.name }}
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Study Duration</label>
-            <select [(ngModel)]="studyDuration" class="form-control">
-              <option value="1">1 Week</option>
-              <option value="2">2 Weeks</option>
-              <option value="3">3 Weeks</option>
-              <option value="4">1 Month</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Daily Study Time (hours)</label>
-            <input
-              type="number"
-              [(ngModel)]="dailyHours"
-              min="1"
-              max="12"
-              class="form-control"
-              placeholder="e.g., 2">
-          </div>
-
-          <div class="form-group">
-            <label>Exam Date (Optional)</label>
-            <input
-              type="date"
-              [(ngModel)]="examDate"
-              class="form-control">
-          </div>
-
-          <button
-            class="btn-generate-plan"
-            (click)="generateStudyPlan()"
-            [disabled]="!canGeneratePlan() || generating">
-            <i [class]="generating ? 'bi bi-hourglass-split' : 'bi bi-magic'"></i>
-            {{ generating ? 'Generating...' : 'Generate AI Study Plan' }}
-          </button>
-        </div>
-
-        <!-- Current Study Plan -->
-        <div class="current-plan" *ngIf="currentPlan">
-          <div class="plan-header">
+        <!-- Calendar Section -->
+        <div class="calendar-section">
+          <div class="current-plan" *ngIf="currentPlan">
             <div>
               <h3><i class="bi bi-calendar-check"></i> Your Study Plan</h3>
               <p class="plan-meta">
@@ -89,86 +30,32 @@
                 {{ currentPlan.dailyHours }}h/day
               </p>
             </div>
-            <button class="btn-new-plan" (click)="createNewPlan()">
-              <i class="bi bi-arrow-clockwise"></i> Create New Plan
+            
+          
+        </div>
+          <div class="calendar-header">
+            
+            <button class="btn-ai-preferences" (click)="openPreferences()">
+              <i class="bi bi-stars"></i> AI Preferences
             </button>
           </div>
 
-          <!-- Progress Overview -->
-          <div class="progress-overview">
-            <div class="progress-stat">
-              <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
-              <div class="stat-info">
-                <span class="stat-value">{{ completedTasks }}/{{ totalTasks }}</span>
-                <span class="stat-label">Tasks Completed</span>
-              </div>
-            </div>
-            <div class="progress-stat">
-              <div class="stat-icon"><i class="bi bi-clock-fill"></i></div>
-              <div class="stat-info">
-                <span class="stat-value">{{ studiedHours }}h</span>
-                <span class="stat-label">Total Study Time</span>
-              </div>
-            </div>
-            <div class="progress-stat">
-              <div class="stat-icon"><i class="bi bi-graph-up"></i></div>
-              <div class="stat-info">
-                <span class="stat-value">{{ progressPercentage }}%</span>
-                <span class="stat-label">Overall Progress</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Study Schedule -->
-          <div class="study-schedule">
-            <h4><i class="bi bi-list-check"></i> Study Schedule</h4>
-
-            <div class="week-tabs">
-              <button
-                *ngFor="let week of currentPlan.weeks; let i = index"
-                class="week-tab"
-                [class.active]="selectedWeek === i"
-                (click)="selectWeek(i)">
-                Week {{ i + 1 }}
-              </button>
+          <!-- Full Calendar -->
+            <div class="calendar-wrapper">
+              <full-calendar [options]="calendarOptions"></full-calendar>
             </div>
 
-            <div class="week-content" *ngIf="currentPlan.weeks[selectedWeek]">
-              <div class="day-card" *ngFor="let day of currentPlan.weeks[selectedWeek].days">
-                <div class="day-header">
-                  <h5>{{ day.dayName }}</h5>
-                  <span class="day-date">{{ day.date | date: 'MMM d' }}</span>
-                </div>
-
-                <div class="tasks-list">
-                  <div
-                    class="task-item"
-                    *ngFor="let task of day.tasks"
-                    [class.completed]="task.completed">
-                    <input
-                      type="checkbox"
-                      [(ngModel)]="task.completed"
-                      (change)="updateTaskStatus(task)">
-                    <div class="task-details">
-                      <span class="task-title">{{ task.title }}</span>
-                      <span class="task-time">
-                        <i class="bi bi-clock"></i> {{ task.duration }}
-                      </span>
-                    </div>
-                    <span class="task-type" [class]="'type-' + task.type">
-                      {{ task.type }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="empty-day" *ngIf="day.tasks.length === 0">
-                  <i class="bi bi-calendar-x"></i>
-                  <span>Rest day</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- Preferences Modal -->
+          <app-preferences-modal
+            [show]="showPreferencesModal"
+            [availableDocuments]="availableDocuments"
+            (close)="closePreferences()"
+            (save)="savePreferences($event)">
+          </app-preferences-modal>
         </div>
+
+        <!-- Current Plan Section (Future integration) -->
+        
       </div>
     </div>
   </div>

@@ -1,0 +1,89 @@
+<div class="modal-backdrop" *ngIf="show" (click)="handleClose()"></div>
+
+<div class="preferences-modal" *ngIf="show">
+  <div class="modal-header">
+    <h2><i class="bi bi-sliders"></i> Study Preferences</h2>
+    <button class="close-btn" (click)="handleClose()"><i class="bi bi-x-lg"></i></button>
+  </div>
+
+  <div class="modal-body">
+
+    <!-- 🗂️ Document Selection -->
+    <div class="section">
+      <h4><i class="bi bi-file-earmark-text"></i> Select Documents to Study</h4>
+      <div class="documents-grid">
+        <div class="document-item" *ngFor="let doc of availableDocuments">
+         <input type="checkbox" [checked]="doc.selected" (change)="doc.selected = !doc.selected; toggleDocument(doc)" />
+
+          <label>{{ doc.name }}</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🧪 Exams (optional per document) -->
+    <div class="section" *ngIf="preferences.documents.length > 0">
+      <h4><i class="bi bi-calendar-event"></i> Exam Dates</h4>
+      <div class="exams-grid">
+        <div *ngFor="let doc of preferences.documents" class="exam-card">
+          <div class="exam-header">
+            <i class="bi bi-file-earmark-text"></i>
+            <span>{{ doc.name }}</span>
+          </div>
+          <input type="date" [(ngModel)]="doc.examDate" class="exam-date-picker"/>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- 🗓️ Free Days -->
+    <div class="section">
+      <h4>🗓️ Free Days</h4>
+      <div class="days-grid">
+        <button
+          *ngFor="let day of weekDays"
+          (click)="toggleDay(day)"
+          [class.selected]="preferences.freeDays.includes(day)">
+          {{ day }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ⏰ Daily Free Hours -->
+    <div class="section">
+      <h4>⏰ Daily Free Hours</h4>
+      <div class="hours-grid">
+        <div *ngFor="let day of weekDays" class="day-hour">
+          <label>{{ day }}</label>
+          <input
+            type="text"
+            placeholder="e.g. 14:00-17:00"
+            [(ngModel)]="preferences.dailyHours[day]" />
+        </div>
+      </div>
+    </div>
+
+    <!-- ⌛ Session Duration -->
+    <div class="section">
+      <h4>📖 Session Duration (hours)</h4>
+      <input
+        type="number"
+        min="1"
+        max="6"
+        [(ngModel)]="preferences.sessionDuration"
+        class="form-control" />
+    </div>
+
+  </div>
+
+  <div class="modal-footer">
+  <button class="btn-cancel" (click)="handleClose()">Cancel</button>
+  <button
+    class="btn-generate-plan"
+    (click)="generatePlan()"
+    [disabled]="!canGeneratePlan() || generating">
+    <i [class]="generating ? 'bi bi-hourglass-split' : 'bi bi-magic'"></i>
+    {{ generating ? 'Generating...' : 'Generate AI Study Plan' }}
+  </button>
+</div>
+
+</div>

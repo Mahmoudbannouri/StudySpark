@@ -3,7 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component';
 import { AuthService } from '../../../services/auth.service';
-
+import { PreferencesModalComponent, Preferences } from './preference-modal.component';
+import { FullCalendarModule } from '@fullcalendar/angular';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import { CalendarOptions, EventInput } from '@fullcalendar/core';
+import timeGridPlugin from '@fullcalendar/timegrid';
 interface Document {
   id: number;
   name: string;
@@ -13,188 +18,154 @@ interface Document {
 interface Task {
   id: number;
   title: string;
-  duration: string;
-  type: string;
+  startTime: string;
+  endTime: string;
+  type: 'read' | 'review' | 'practice' | 'quiz';
   completed: boolean;
-}
-
-interface Day {
-  dayName: string;
-  date: Date;
-  tasks: Task[];
-}
-
-interface Week {
-  days: Day[];
 }
 
 interface StudyPlan {
   documents: string[];
   duration: number;
   dailyHours: number;
-  examDate?: string;
-  weeks: Week[];
+  tasks: Task[];
 }
 
 @Component({
   selector: 'app-study-plan',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarComponent],
+  imports: [CommonModule, FormsModule, SidebarComponent, PreferencesModalComponent, FullCalendarModule],
   templateUrl: './study-plan.component.html',
   styleUrls: ['./study-plan.component.scss']
 })
 export class StudyPlanComponent implements OnInit {
   user: any = null;
-  generating = false;
+  showPreferencesModal = false;
+  userPreferences: Preferences | null = null;
 
-  // Form fields
   availableDocuments: Document[] = [
-    { id: 1, name: 'Introduction to Machine Learning.pdf', selected: false },
-    { id: 2, name: 'Data Structures Chapter 3.pdf', selected: false },
-    { id: 3, name: 'Physics Lecture Notes.pdf', selected: false },
-    { id: 4, name: 'Calculus Fundamentals.pdf', selected: false },
+    { id: 1, name: 'Introduction to ML.pdf', selected: false },
+    { id: 2, name: 'Data Structures.pdf', selected: false },
+    { id: 3, name: 'Physics Notes.pdf', selected: false },
+    { id: 4, name: 'Calculus.pdf', selected: false },
   ];
 
-  studyDuration: number = 2;
-  dailyHours: number = 2;
-  examDate: string = '';
+  studyDuration = 2; // weeks
+  dailyHours = 2;
 
-  // Current plan
   currentPlan: StudyPlan | null = null;
-  selectedWeek = 0;
 
-  // Progress stats
-  completedTasks = 0;
-  totalTasks = 0;
-  studiedHours = 0;
-  progressPercentage = 0;
+  calendarOptions: CalendarOptions = {
+  plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+  initialView: 'timeGridWeek',
+  editable: false,
+  selectable: true,
+  headerToolbar: {
+    left: 'prev,next today',
+    center: 'title',
+    right: 'dayGridMonth,timeGridWeek'
+  },
+  events: [],
+  allDaySlot: false,
+  slotMinTime: '00:00:00',   // start at midnight
+  slotMaxTime: '24:00:00',   // end at midnight
+  eventDidMount: (info) => {
+    const start = info.event.start?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const end = info.event.end?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    info.el.setAttribute('title', `${start} - ${end}`);
+    info.el.style.cursor = 'pointer';
+    info.el.style.borderRadius = '6px';
+    info.el.style.padding = '2px 4px';
+    info.el.style.fontSize = '0.85rem';
+    info.el.style.backgroundColor = '#667eea';
+    info.el.style.color = 'white';
+  },
+  eventMouseEnter: (info) => { info.el.style.backgroundColor = '#5a67d8'; },
+  eventMouseLeave: (info) => { info.el.style.backgroundColor = '#667eea'; },
+  dateClick: (info) => console.log('Date clicked:', info.dateStr),
+};
+
+
+
 
   constructor(private auth: AuthService) {}
 
   ngOnInit(): void {
     this.user = this.auth.getUserInfo();
+    this.generateFakePlan(); // Demo with fake events
+  }
+
+  openPreferences() { this.showPreferencesModal = true; }
+  closePreferences() { this.showPreferencesModal = false; }
+  savePreferences(prefs: Preferences) { 
+    this.userPreferences = prefs;
+    this.showPreferencesModal = false;
   }
 
   canGeneratePlan(): boolean {
-    return this.availableDocuments.some(doc => doc.selected) &&
-           this.dailyHours > 0 &&
-           this.studyDuration > 0;
+    return this.availableDocuments.some(d => d.selected) && this.dailyHours > 0 && this.studyDuration > 0;
   }
 
-  generateStudyPlan(): void {
-    this.generating = true;
+  generateFakePlan() {
+    const today = new Date();
+    const tasks: Task[] = [];
 
-    // Simulate AI generation
-    setTimeout(() => {
-      const selectedDocs = this.availableDocuments
-        .filter(doc => doc.selected)
-        .map(doc => doc.name);
+    for (let i = 0; i < 10; i++) {
+      const start = new Date(today);
+      start.setDate(today.getDate() + i);
+      start.setHours(9 + (i % 4), 0, 0, 0);
 
-      this.currentPlan = this.createMockPlan(selectedDocs);
-      this.calculateProgress();
-      this.generating = false;
-    }, 2000);
-  }
+      const end = new Date(start);
+      end.setHours(start.getHours() + 1);
 
-  createMockPlan(documents: string[]): StudyPlan {
-    const weeks: Week[] = [];
-    const startDate = new Date();
-    const taskTypes = ['read', 'review', 'practice', 'quiz'];
+      const types: Task['type'][] = ['read', 'review', 'practice', 'quiz'];
+      const type = types[i % types.length];
 
-    for (let weekNum = 0; weekNum < this.studyDuration; weekNum++) {
-      const days: Day[] = [];
-
-      for (let dayNum = 0; dayNum < 7; dayNum++) {
-        const currentDate = new Date(startDate);
-        currentDate.setDate(startDate.getDate() + (weekNum * 7) + dayNum);
-
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const tasks: Task[] = [];
-
-        // Rest on Sundays
-        if (dayNum !== 0) {
-          const numTasks = Math.min(documents.length, Math.floor(Math.random() * 2) + 2);
-
-          for (let taskNum = 0; taskNum < numTasks; taskNum++) {
-            const doc = documents[taskNum % documents.length];
-            const type = taskTypes[Math.floor(Math.random() * taskTypes.length)];
-
-            tasks.push({
-              id: weekNum * 100 + dayNum * 10 + taskNum,
-              title: `${this.capitalize(type)}: ${doc}`,
-              duration: `${Math.floor(this.dailyHours / numTasks * 60)}min`,
-              type: type,
-              completed: Math.random() > 0.7 // Randomly complete some tasks for demo
-            });
-          }
-        }
-
-        days.push({
-          dayName: dayNames[dayNum],
-          date: currentDate,
-          tasks: tasks
-        });
-      }
-
-      weeks.push({ days });
+      tasks.push({
+        id: i,
+        title: `Task ${i + 1}`,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        type,
+        completed: false
+      });
     }
 
-    return {
-      documents,
-      duration: this.studyDuration,
-      dailyHours: this.dailyHours,
-      examDate: this.examDate,
-      weeks
+    this.currentPlan = {
+      documents: ['Introduction to ML.pdf', 'Data Structures.pdf'],
+      duration: 2,
+      dailyHours: 2,
+      tasks
     };
+
+    this.loadTasksIntoCalendar();
   }
 
-  capitalize(str: string): string {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
-  calculateProgress(): void {
+  loadTasksIntoCalendar() {
     if (!this.currentPlan) return;
 
-    let completed = 0;
-    let total = 0;
-    let hours = 0;
-
-    this.currentPlan.weeks.forEach(week => {
-      week.days.forEach(day => {
-        day.tasks.forEach(task => {
-          total++;
-          if (task.completed) {
-            completed++;
-            // Extract hours from duration string
-            const durationMatch = task.duration.match(/(\d+)/);
-            if (durationMatch) {
-              hours += parseInt(durationMatch[1]) / 60;
-            }
-          }
-        });
-      });
+    const events: EventInput[] = this.currentPlan.tasks.map(task => {
+      let color = '';
+      switch(task.type) {
+        case 'read': color = '#3b82f6'; break;
+        case 'review': color = '#f59e0b'; break;
+        case 'practice': color = '#10b981'; break;
+        case 'quiz': color = '#ec4899'; break;
+      }
+      return {
+        title: task.title,
+        start: task.startTime,
+        end: task.endTime,
+        backgroundColor: color,
+        borderColor: color
+      };
     });
 
-    this.completedTasks = completed;
-    this.totalTasks = total;
-    this.studiedHours = Math.round(hours * 10) / 10;
-    this.progressPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-  }
-
-  selectWeek(index: number): void {
-    this.selectedWeek = index;
-  }
-
-  updateTaskStatus(task: Task): void {
-    this.calculateProgress();
+    this.calendarOptions.events = events;
   }
 
   createNewPlan(): void {
     this.currentPlan = null;
-    this.selectedWeek = 0;
-    this.availableDocuments.forEach(doc => doc.selected = false);
-    this.studyDuration = 2;
-    this.dailyHours = 2;
-    this.examDate = '';
+    this.availableDocuments.forEach(d => d.selected = false);
   }
 }
