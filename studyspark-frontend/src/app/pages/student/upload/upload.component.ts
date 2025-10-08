@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component';
+import { DocumentService } from '../../../services/document.service';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -15,6 +16,8 @@ export class UploadComponent {
   isDragging = false;
   uploadProgress = 0;
   isUploading = false;
+
+  constructor(private documentService: DocumentService) {}
 
   onFileSelected(event: any): void {
     const file = event.target.files[0];
@@ -81,20 +84,46 @@ export class UploadComponent {
     this.isUploading = true;
     this.uploadProgress = 0;
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      this.uploadProgress += 10;
-      if (this.uploadProgress >= 100) {
-        clearInterval(interval);
+    // Show loading state
+    Swal.fire({
+      title: 'Uploading...',
+      text: 'Please wait while we process your document',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
+
+    // Upload document to backend
+    this.documentService.uploadDocument(this.selectedFile).subscribe({
+      next: (response) => {
         this.isUploading = false;
-        Swal.fire('Success!', 'File uploaded successfully', 'success');
+        this.uploadProgress = 100;
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: `Document uploaded successfully! Word count: ${response.document.wordCount || 0}`,
+          confirmButtonText: 'OK'
+        });
+
+        // Reset form
         this.selectedFile = null;
         this.uploadProgress = 0;
-      }
-    }, 200);
+      },
+      error: (error) => {
+        this.isUploading = false;
+        this.uploadProgress = 0;
 
-    // TODO: Implement actual file upload to backend
-    // this.documentService.uploadDocument(this.selectedFile).subscribe(...)
+        console.error('Upload error:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Upload Failed',
+          text: error.error?.message || 'Failed to upload document. Please try again.',
+          confirmButtonText: 'OK'
+        });
+      }
+    });
   }
 
   getFileIcon(type: string): string {

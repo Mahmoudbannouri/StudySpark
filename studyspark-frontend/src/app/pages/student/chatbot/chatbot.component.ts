@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component';
 import { AuthService } from '../../../services/auth.service';
+import { DocumentService } from '../../../services/document.service';
 
 interface Message {
   text: string;
@@ -26,19 +27,29 @@ export class ChatbotComponent implements OnInit {
   selectedDocument: string | null = null;
   showDocSelector = false;
   user: any = null;
+  documents: any[] = [];
 
-  // Mock documents list
-  documents = [
-    { id: 1, name: 'Introduction to Machine Learning.pdf' },
-    { id: 2, name: 'Data Structures Chapter 3.pdf' },
-    { id: 3, name: 'Physics Lecture Notes.pdf' }
-  ];
-
-  constructor(private auth: AuthService) {}
+  constructor(
+    private auth: AuthService,
+    private documentService: DocumentService
+  ) {}
 
   ngOnInit(): void {
     this.user = this.auth.getUserInfo();
+    this.loadDocuments();
     this.addBotMessage('Hello! 👋 I\'m your AI study assistant powered by RAG (Retrieval-Augmented Generation). I can answer questions about all your uploaded documents! Ask me anything, or optionally select a specific document to focus on.');
+  }
+
+  loadDocuments(): void {
+    this.documentService.getUserDocuments().subscribe({
+      next: (documents) => {
+        this.documents = documents.filter(doc => doc.status === 'ready');
+      },
+      error: (error) => {
+        console.error('Error loading documents:', error);
+        this.documents = [];
+      }
+    });
   }
 
   selectDocument(doc: any): void {

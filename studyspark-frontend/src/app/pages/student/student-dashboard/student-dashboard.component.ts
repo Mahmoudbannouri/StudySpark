@@ -90,23 +90,22 @@ export class StudentDashboardComponent implements OnInit {
   }
 
   loadDocuments(): void {
-    // TODO: Replace with actual API call
-    // this.documentService.getUserDocuments().subscribe(...)
-
-    // Mock data for now
-    this.documents = [
-      {
-        id: 1,
-        name: 'SQLCOURSE.pdf',
-        type: 'application/pdf',
-        wordCount: 767,
-        uploadedAt: new Date(),
-        recentActivity: [
-          { name: 'Summary Generated', icon: 'bi-file-text', timestamp: new Date(), type: 'summary' },
-          { name: 'Flashcards Created', icon: 'bi-card-list', timestamp: new Date(), type: 'flashcards' }
-        ]
+    this.documentService.getUserDocuments().subscribe({
+      next: (documents) => {
+        this.documents = documents.map(doc => ({
+          id: doc.id,
+          name: doc.name,
+          type: doc.fileType,
+          wordCount: doc.wordCount || 0,
+          uploadedAt: new Date(doc.uploadedAt),
+          recentActivity: []
+        }));
+      },
+      error: (error) => {
+        console.error('Error loading documents:', error);
+        this.documents = [];
       }
-    ];
+    });
   }
 
   // File Upload Handlers

@@ -5,6 +5,7 @@ import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { AdminDashboardComponent } from './pages/admin/admin-dashboard/admin-dashboard.component';
 import { StudentDashboardComponent } from './pages/student/student-dashboard/student-dashboard.component';
 import { UploadComponent } from './pages/student/upload/upload.component';
+import { DocumentsComponent } from './pages/student/documents/documents.component';
 import { ChatbotComponent } from './pages/student/chatbot/chatbot.component';
 import { SummarizerComponent } from './pages/student/summarizer/summarizer.component';
 import { AuthGuard } from './guards/auth.guard';
@@ -31,9 +32,9 @@ export const routes: Routes = [
   { path: 'student/dashboard', component: StudentDashboardComponent, canActivate: [AuthGuard] },
   { path: 'student/subscription', component: SubscriptionComponent, canActivate: [AuthGuard] },
   { path: 'student/upload', component: UploadComponent, canActivate: [AuthGuard] },
+  { path: 'student/documents', component: DocumentsComponent, canActivate: [AuthGuard] },
   { path: 'student/chatbot', component: ChatbotComponent, canActivate: [AuthGuard] },
   { path: 'student/summarizer', component: SummarizerComponent, canActivate: [AuthGuard] },
-  { path: 'student/documents', redirectTo: 'student', pathMatch: 'full' }, // TODO: Create documents page
   { path: 'student/flashcards', component: FlashcardsComponent, canActivate: [AuthGuard] },
   { path: 'student/quiz', component: QuizComponent, canActivate: [AuthGuard] },
   { path: 'student/study-plan', component: StudyPlanComponent, canActivate: [AuthGuard] },

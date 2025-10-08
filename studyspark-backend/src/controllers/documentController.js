@@ -2,6 +2,7 @@ import Document from '../models/Document.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { extractTextFromFile, getFileCategory } from '../utils/textExtractor.js';
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -58,24 +59,55 @@ export const uploadDocument = async (req, res) => {
       status: 'processing'
     });
 
-    // TODO: Process file based on type
-    // - If PDF/TXT: Extract text and count words
-    // - If audio/video: Queue for transcription (Hadil's module)
-    // For now, mark as ready
-    document.status = 'ready';
-    document.wordCount = 0; // Will be updated after processing
-    await document.save();
+    // Process file based on type
+    try {
+      const fileCategory = getFileCategory(mimetype);
 
-    res.status(201).json({
-      message: 'Document uploaded successfully',
-      document: {
-        id: document.id,
-        name: document.name,
-        fileType: document.fileType,
-        wordCount: document.wordCount,
-        uploadedAt: document.uploadedAt
+      if (fileCategory === 'pdf' || fileCategory === 'text') {
+        // Extract text content from PDF or TXT files
+        const { text, wordCount } = await extractTextFromFile(filePath, mimetype);
+        document.extractedText = text;
+        document.wordCount = wordCount;
+        document.status = 'ready';
+      } else if (fileCategory === 'audio' || fileCategory === 'video') {
+        // For audio/video, mark as ready (transcription will be done separately)
+        document.status = 'ready';
+        document.isTranscribed = false;
+      } else {
+        document.status = 'error';
       }
-    });
+
+      await document.save();
+
+      res.status(201).json({
+        message: 'Document uploaded successfully',
+        document: {
+          id: document.id,
+          name: document.name,
+          fileType: document.fileType,
+          fileSize: document.fileSize,
+          wordCount: document.wordCount,
+          status: document.status,
+          uploadedAt: document.uploadedAt
+        }
+      });
+    } catch (extractError) {
+      console.error('Content extraction error:', extractError);
+      document.status = 'error';
+      await document.save();
+
+      res.status(201).json({
+        message: 'Document uploaded but content extraction failed',
+        document: {
+          id: document.id,
+          name: document.name,
+          fileType: document.fileType,
+          fileSize: document.fileSize,
+          status: 'error',
+          uploadedAt: document.uploadedAt
+        }
+      });
+    }
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ message: 'Server error during upload' });
@@ -155,7 +187,7 @@ export const deleteDocument = async (req, res) => {
 };
 
 // @route   POST /api/documents/:id/extract-text
-// @desc    Extract text from PDF/TXT (called after upload)
+// @desc    Extract text from PDF/TXT (manually trigger re-extraction)
 // @access  Private
 export const extractText = async (req, res) => {
   try {
@@ -167,23 +199,26 @@ export const extractText = async (req, res) => {
       return res.status(404).json({ message: 'Document not found' });
     }
 
-    // TODO: Implement text extraction based on file type
-    // For PDF: use pdf-parse or similar
-    // For TXT: just read file
-    // Example:
-    // const extractedText = await extractTextFromFile(document.filePath, document.fileType);
-    // const wordCount = extractedText.split(/\s+/).length;
+    const fileCategory = getFileCategory(document.fileType);
 
-    const extractedText = 'Sample extracted text'; // Placeholder
-    const wordCount = 100; // Placeholder
+    if (fileCategory !== 'pdf' && fileCategory !== 'text') {
+      return res.status(400).json({
+        message: 'Text extraction only available for PDF and TXT files'
+      });
+    }
 
-    document.extractedText = extractedText;
+    // Extract text content
+    const { text, wordCount } = await extractTextFromFile(document.filePath, document.fileType);
+
+    document.extractedText = text;
     document.wordCount = wordCount;
+    document.status = 'ready';
     await document.save();
 
     res.json({
       message: 'Text extracted successfully',
-      wordCount
+      wordCount,
+      status: 'ready'
     });
   } catch (error) {
     console.error('Extract text error:', error);

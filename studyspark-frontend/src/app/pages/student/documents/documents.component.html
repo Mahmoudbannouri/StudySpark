@@ -1,0 +1,118 @@
+<div class="student-layout">
+  <app-sidebar></app-sidebar>
+
+  <div class="main-content">
+    <header class="top-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">My Documents</h1>
+          <p class="page-subtitle">Manage your uploaded study materials</p>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-primary" (click)="navigateToUpload()">
+            <i class="bi bi-upload me-2"></i>
+            Upload New Document
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 text-muted">Loading your documents...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!isLoading && documents.length === 0" class="empty-state">
+        <i class="bi bi-folder2-open empty-icon"></i>
+        <h3>No Documents Yet</h3>
+        <p class="text-muted">Upload your first study material to get started!</p>
+        <button class="btn btn-primary mt-3" (click)="navigateToUpload()">
+          <i class="bi bi-upload me-2"></i>
+          Upload Document
+        </button>
+      </div>
+
+      <!-- Documents Grid -->
+      <div *ngIf="!isLoading && documents.length > 0" class="documents-grid">
+        <div class="document-card" *ngFor="let doc of documents">
+          <div class="document-header">
+            <i [class]="'document-icon ' + getFileIcon(doc.fileType)"></i>
+            <span [class]="getStatusBadge(doc.status)">{{ doc.status }}</span>
+          </div>
+
+          <div class="document-body">
+            <h5 class="document-name" [title]="doc.name">{{ doc.name }}</h5>
+
+            <div class="document-meta">
+              <div class="meta-item">
+                <i class="bi bi-calendar3"></i>
+                <span>{{ formatDate(doc.uploadedAt) }}</span>
+              </div>
+              <div class="meta-item" *ngIf="doc.wordCount > 0">
+                <i class="bi bi-file-text"></i>
+                <span>{{ doc.wordCount }} words</span>
+              </div>
+              <div class="meta-item" *ngIf="doc.fileSize">
+                <i class="bi bi-hdd"></i>
+                <span>{{ formatFileSize(doc.fileSize) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="document-actions">
+            <button
+              class="btn btn-sm btn-outline-primary"
+              title="View Details"
+              (click)="viewDocument(doc.id)">
+              <i class="bi bi-eye"></i>
+            </button>
+            <button
+              class="btn btn-sm btn-outline-danger"
+              title="Delete"
+              (click)="deleteDocument(doc.id, doc.name)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Stats -->
+      <div *ngIf="!isLoading && documents.length > 0" class="document-stats mt-4">
+        <div class="stat-card">
+          <div class="stat-icon bg-primary">
+            <i class="bi bi-files"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ documents.length }}</h3>
+            <p>Total Documents</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon bg-success">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ getDocumentsByStatus('ready') }}</h3>
+            <p>Ready</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon bg-warning">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+          <div class="stat-content">
+            <h3>{{ getDocumentsByStatus('processing') }}</h3>
+            <p>Processing</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
