@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-
+import { Title } from '@angular/platform-browser';
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -9,5 +9,11 @@ import { RouterOutlet } from '@angular/router';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-  title = 'studyspark-frontend';
+  constructor(private titleService: Title) {
+    this.setTitle('⚡ Study Spark');
+  }
+
+  setTitle(newTitle: string) {
+    this.titleService.setTitle(newTitle);
+  }
 }

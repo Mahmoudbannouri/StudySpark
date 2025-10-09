@@ -11,7 +11,7 @@
         <div class="header-right" *ngIf="user">
           <div class="user-badge">
             <span class="user-name"><i class="bi bi-person-circle"></i> {{ user.fullname }}</span>
-            <span class="user-id">ID: {{ user.id }}</span>
+            <span class="user-id">Name: {{ user.fullname }}</span>
           </div>
         </div>
       </div>
@@ -24,9 +24,9 @@
           <div class="current-plan" *ngIf="currentPlan">
             <div>
               <h3><i class="bi bi-calendar-check"></i> Your Study Plan</h3>
-              <p class="plan-meta">
+              <p class="plan-meta" *ngIf="currentPlan?.documents?.length">
                 {{ currentPlan.documents.length }} documents •
-                {{ currentPlan.duration }} weeks •
+                
                 {{ currentPlan.dailyHours }}h/day
               </p>
             </div>
@@ -50,7 +50,8 @@
             [show]="showPreferencesModal"
             [availableDocuments]="availableDocuments"
             (close)="closePreferences()"
-            (save)="savePreferences($event)">
+            (save)="savePreferences($event)"
+            (generate)="generatePlan($event)">
           </app-preferences-modal>
         </div>
 

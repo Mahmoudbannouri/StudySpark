@@ -254,5 +254,16 @@
     }
   }
 }
+.hours-grid .day-hour input.disabled-input {
+  background-color: #f0f0f0;   /* light grey background */
+  color: #a0a0a0;              /* faded text */
+  cursor: not-allowed;          /* shows user can't type */
+  pointer-events: none;         /* prevent interaction just in case */
+}
+
+.hours-grid .day-hour input:disabled {
+  /* fallback for standard disabled styling */
+  opacity: 0.6;
+}
 
 

@@ -7,14 +7,8 @@ const StudyPlan = sequelize.define('StudyPlan', {
     primaryKey: true,
     autoIncrement: true
   },
-  documentId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: 'documents',
-      key: 'id'
-    }
-  },
+
+  // The user who owns this plan
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -23,30 +17,49 @@ const StudyPlan = sequelize.define('StudyPlan', {
       key: 'id'
     }
   },
-  title: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
+
+  // The document associated with this plan
+  documents: {
+  type: DataTypes.JSON, // stores an array of document IDs
+  allowNull: false
+}
+,
+
+  // Optional exam date for this document
   examDate: {
     type: DataTypes.DATE,
-    allowNull: false
+    allowNull: true
   },
+
+  // Array of tasks with title, day, start/end time, type, completed
   tasks: {
-    type: DataTypes.JSON, // Array of {day, task, duration, completed}
+    type: DataTypes.JSON,
     allowNull: false
   },
-  totalDays: {
+
+  // Array of weekdays the user will study, e.g. ["Monday", "Wednesday"]
+  freeDays: {
+    type: DataTypes.JSON,
+    allowNull: false
+  },
+
+  // Object of daily available hours, e.g. { "Monday": ["08:00-12:00", "18:00-21:00"] }
+  dailyHours: {
+    type: DataTypes.JSON,
+    allowNull: false
+  },
+
+  // Duration of each session in hours
+  sessionDuration: {
     type: DataTypes.INTEGER,
     allowNull: false
   },
-  progress: {
-    type: DataTypes.INTEGER, // Percentage
-    defaultValue: 0
-  },
+
   createdAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   }
+
 }, {
   tableName: 'study_plans',
   timestamps: true

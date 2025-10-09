@@ -25,7 +25,7 @@ import summaryRoutes from "./routes/summaryRoutes.js";
 import flashcardRoutes from "./routes/flashcardRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
-
+import studyPlanRoutes from "./routes/studyPlanRoutes.js";
 dotenv.config();
 const app = express();
 
@@ -41,6 +41,7 @@ app.use("/api/summaries", summaryRoutes);
 app.use("/api/flashcards", flashcardRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/study-plans", studyPlanRoutes);
 
 // ✅ DB Connection + Auto Sync
 sequelize

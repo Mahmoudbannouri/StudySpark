@@ -31,10 +31,21 @@ export class PreferencesModalComponent {
   @Output() generate = new EventEmitter<Preferences>();
 generating = false;
 
-canGeneratePlan() {
-  // Check if user has selected at least one document
-  return this.preferences.documents.length > 0;
+canGeneratePlan(): boolean {
+  const hasDocument = this.preferences.documents.length > 0;
+  const hasFreeDay = this.preferences.freeDays.length > 0;
+
+  // All free days must have hours
+  const freeDaysHaveHours = this.preferences.freeDays.every(day => {
+    const hours = this.preferences.dailyHours[day];
+    return hours && hours.trim() !== '';
+  });
+
+  const hasDuration = typeof this.preferences.sessionDuration === 'number' && this.preferences.sessionDuration > 0;
+
+  return hasDocument && hasFreeDay && freeDaysHaveHours && hasDuration;
 }
+
 
 generatePlan() {
   if (!this.canGeneratePlan()) return;

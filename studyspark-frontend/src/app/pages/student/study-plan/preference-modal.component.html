@@ -48,19 +48,21 @@
       </div>
     </div>
 
-    <!-- ⏰ Daily Free Hours -->
     <div class="section">
-      <h4>⏰ Daily Free Hours</h4>
-      <div class="hours-grid">
-        <div *ngFor="let day of weekDays" class="day-hour">
-          <label>{{ day }}</label>
-          <input
-            type="text"
-            placeholder="e.g. 14:00-17:00"
-            [(ngModel)]="preferences.dailyHours[day]" />
-        </div>
-      </div>
+  <h4>⏰ Daily Free Hours</h4>
+  <div class="hours-grid">
+    <div *ngFor="let day of weekDays" class="day-hour">
+      <label>{{ day }}</label>
+      <input
+  type="text"
+  placeholder="e.g. 14:00-17:00"
+  [(ngModel)]="preferences.dailyHours[day]"
+  [disabled]="!preferences.freeDays.includes(day)"
+  [class.disabled-input]="!preferences.freeDays.includes(day)"
+/>
     </div>
+  </div>
+</div>
 
     <!-- ⌛ Session Duration -->
     <div class="section">
