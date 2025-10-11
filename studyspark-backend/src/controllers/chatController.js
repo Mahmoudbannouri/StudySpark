@@ -1,60 +1,36 @@
 import ChatMessage from '../models/ChatMessage.js';
 import Document from '../models/Document.js';
+import axios from 'axios';
 
-// Ask question with RAG (Mahmoud's AI module - your chatbot!)
 export const askQuestion = async (req, res) => {
   try {
-    const { documentId, question, useWebSearch = false } = req.body;
+    const userId = req.user.id;
+    const { question, documentId } = req.body;
 
-    let document = null;
-    if (documentId) {
-      document = await Document.findOne({
-        where: { id: documentId, userId: req.user.id }
-      });
+    const response = await axios.post('http://localhost:5004/ask', {
+      user_id: userId,  // ✅ send plain numeric ID
+      question
+    });
+    
 
-      if (!document) {
-        return res.status(404).json({ message: 'Document not found' });
-      }
-    }
+    const answer = response.data.answer || 'No answer generated.';
+    const confidence = response.data.confidence || null;
+    const sources = response.data.sources || null;
 
-    // TODO: Call your RAG chatbot model (Mahmoud)
-    // const aiResponse = await ragChatbot.ask(question, document?.extractedText, useWebSearch);
-
-    // Mock AI response
-    const answer = document
-      ? `Based on "${document.name}": This is an AI-generated answer to your question about the document content.`
-      : 'This is a general AI response to your question.';
-
-    const sources = useWebSearch ? [
-      { title: 'Source 1', url: 'https://example.com/1' },
-      { title: 'Source 2', url: 'https://example.com/2' }
-    ] : null;
-
-    // Save chat message
-    const chatMessage = await ChatMessage.create({
-      documentId: documentId || null,
-      userId: req.user.id,
+    // Save in your chat_messages table
+    const chat = await ChatMessage.create({
+      userId,
+      documentId,
       question,
       answer,
       sources,
-      useWebSearch,
-      confidence: 0.85 // AI confidence score
+      confidence
     });
 
-    res.status(201).json({
-      message: 'Question answered successfully',
-      chat: {
-        id: chatMessage.id,
-        question: chatMessage.question,
-        answer: chatMessage.answer,
-        sources: chatMessage.sources,
-        confidence: chatMessage.confidence,
-        createdAt: chatMessage.createdAt
-      }
-    });
+    res.json({ ok: true, chat });
   } catch (error) {
-    console.error('Ask question error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Chat Error:', error.message);
+    res.status(500).json({ ok: false, error: error.message });
   }
 };
 

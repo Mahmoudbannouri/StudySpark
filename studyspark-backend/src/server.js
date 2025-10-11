@@ -31,7 +31,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+import dataExportRoutes from './routes/dataExport.js';
+app.use('/api/data', dataExportRoutes);
 // ✅ Register routes
 app.use("/api/users", userRoutes);
 app.use("/api/quotas", quotaRoutes);

@@ -44,4 +44,6 @@ const Summary = sequelize.define('Summary', {
   timestamps: true
 });
 
+
+
 export default Summary;
