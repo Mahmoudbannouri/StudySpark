@@ -1,45 +1,84 @@
 // helpers/studyPlanHelper.js
+import axios from "axios";
+import { Op } from "sequelize";
+import Document from "../models/Document.js";
 
 /**
- * Generate tasks for a study plan based on user preferences.
- * This is a placeholder for the AI logic.
- * @param {Object} preferences 
- * @param {Array} preferences.documents - List of document objects {id, name, examDate?}
- * @param {Array} preferences.freeDays - Array of strings e.g. ["Monday","Tuesday"]
- * @param {Object} preferences.dailyHours - { "Monday": "14:00-17:00", ... }
- * @param {Number} preferences.sessionDuration - Hours per session
- * @returns {Array} tasks - List of tasks { title, documentId, startTime, endTime, type, completed }
+ * Generate tasks using AI for a study plan
+ * @param {Object} preferences
+ * @param {Array<number>} preferences.documentsIds - list of document IDs
+ * @param {Number} preferences.userId - current user ID
+ * @param {Array<string>} preferences.freeDays
+ * @param {Object} preferences.dailyHours
+ * @param {Number} preferences.sessionDuration
+ * @param {Object} preferences.examDates
+ * @returns {Promise<Array>} tasks
  */
-export function generateTasks(preferences) {
-  const tasks = [];
-  const now = new Date();
+export async function generateTasks(preferences) {
+  try {
+    console.log("🛠️ Generating tasks with preferences:", preferences);
 
-  // Iterate over documents
-  preferences.documents.forEach((doc, docIndex) => {
-    // Iterate over free days
-    preferences.freeDays.forEach((day, dayIndex) => {
-      // Calculate start/end time based on dailyHours and sessionDuration
-      const [startStr, endStr] = preferences.dailyHours[day].split('-');
-      const startHour = parseInt(startStr.split(':')[0], 10);
-      const startMinute = parseInt(startStr.split(':')[1], 10);
+    // ✅ Extract values safely
+    const documentsIds = preferences.documentsIds || [];
+    const userId = preferences.userId;
 
-      const startTime = new Date(now);
-      startTime.setDate(now.getDate() + dayIndex);
-      startTime.setHours(startHour, startMinute, 0, 0);
-
-      const endTime = new Date(startTime);
-      endTime.setHours(endTime.getHours() + preferences.sessionDuration);
-
-      tasks.push({
-        title: doc.name, // AI will eventually generate smarter titles
-        documentId: doc.id,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        type: 'study',
-        completed: false
-      });
+    if (!Array.isArray(documentsIds) || !userId) {
+      console.error("❌ Invalid preferences: missing documentsIds or userId");
+      return [];
+    }
+console.log("📑 Document IDs to fetch:", documentsIds);
+console.log("👤 User ID:", userId);
+    // 1️⃣ Fetch documents from DB
+    const documents = await Document.findAll({
+      where: {
+        id: { [Op.in]: documentsIds },
+        userId
+      },
+      attributes: ["id", "name", "extractedText"]
     });
-  });
 
-  return tasks;
+    if (!documents || documents.length === 0) {
+      console.warn("⚠️ No documents found for user:", userId);
+      return [];
+    }
+
+    // 2️⃣ Log document info to terminal
+    console.log("📚 ==== DOCUMENTS FETCHED ====");
+    for (const doc of documents) {
+      console.log(`🧾 Document ID: ${doc.id}`);
+      console.log(`📄 Name: ${doc.name}`);
+      console.log("📝 Extracted Text:");
+      console.log(
+        doc.extractedText
+          ? doc.extractedText.slice(0, 500) +
+              (doc.extractedText.length > 500 ? "..." : "")
+          : "⚠️ No text found"
+      );
+      console.log("-------------------------------------------");
+    }
+
+    // 3️⃣ Prepare payload for AI
+    const payload = {
+      documents: documents.map((doc) => ({
+        id: doc.id,
+        name: doc.name,
+        extractedText: doc.extractedText || "",
+      })),
+      freeDays: preferences.freeDays || [],
+      dailyHours: preferences.dailyHours || {},
+      sessionDuration: preferences.sessionDuration || 2,
+      examDates: preferences.examDates || {},
+    };
+
+    console.log("📤 Sending payload to AI server:", payload);
+
+    // 4️⃣ Call Python AI server
+    const response = await axios.post("http://127.0.0.1:8000/generate-tasks", payload);
+    console.log("✅ AI Server Response:", response.data);
+
+    return response.data.tasks || [];
+  } catch (err) {
+    console.error("💥 Error generating AI tasks:", err.message || err);
+    return [];
+  }
 }

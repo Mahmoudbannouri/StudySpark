@@ -170,29 +170,34 @@ export class StudyPlanComponent implements OnInit {
 
   loadTasksIntoCalendar() {
   if (!this.currentPlan) return;
+
   const events: EventInput[] = this.currentPlan.tasks.map(task => {
-    let color = '';
-    switch(task.type) {
-      case 'read': color = '#3b82f6'; break;
-      case 'review': color = '#f59e0b'; break;
-      case 'practice': color = '#10b981'; break;
-      case 'quiz': color = '#ec4899'; break;
-    }
+    // Convert date + time to start/end ISO strings
+    const [startHour, endHour] = task.time.split('-');
+    const startTime = `${task.date}T${startHour}:00.000Z`;
+    const endTime = `${task.date}T${endHour}:00.000Z`;
+
+    // Create a title for calendar
+    const title = `${task.subject}: ${task.topic}`;
+
+    // Assign a type (optional, default to 'study')
+    const type = 'study';
+
+    // Choose color based on type
+    
     return {
-      title: task.title,
-      start: task.startTime,
-      end: task.endTime,
-      backgroundColor: color,
-      borderColor: color
+      title,
+      start: startTime,
+      end: endTime,
+     
     };
   });
-  
-  // Replace the array instead of mutating it
-  this.calendarOptions = {
-    ...this.calendarOptions,
-    events
-  };
+
+  // Feed to your calendar library
+  this.calendarOptions.events = events;
 }
+
+
 
 
   createNewPlan(): void {

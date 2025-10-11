@@ -4,13 +4,12 @@ import { Observable } from 'rxjs';
 import { Preferences } from '../pages/student/study-plan/preference-modal.component';
 import { AuthService } from './auth.service';
 interface Task {
-  id?: number;
-  title: string;
-  startTime: string;
-  endTime: string;
-  type: 'read' | 'review' | 'practice' | 'quiz';
-  completed: boolean;
-  documentId: number;
+  date: string;
+  day: string;
+  time: string;
+  subject: string;
+  topic: string;
+ 
 }
 
 export interface StudyPlan {

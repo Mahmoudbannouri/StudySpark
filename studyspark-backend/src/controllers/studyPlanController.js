@@ -2,22 +2,29 @@
 import StudyPlan from '../models/StudyPlan.js';
 import Document from '../models/Document.js'; // ✅ import it!
 import { generateTasks } from '../utils/studyPlannerHelper.js';
-
+import { Op } from "sequelize";
 export async function createOrUpdateStudyPlan(req, res) {
   try {
     console.log("📩 Incoming request body:", req.body);
     console.log("👤 Authenticated user:", req.user);
 
     const userId = req.user.id;
-    const { documentsIds, freeDays, dailyHours, sessionDuration, examDates } = req.body;
-
-    if (!documentsIds || documentsIds.length === 0) {
+    let { documentsIds, freeDays, dailyHours, sessionDuration, examDates } = req.body;
+    console.log(documentsIds);
+    // Validate documentsIds
+    if (!documentsIds || !Array.isArray(documentsIds) || documentsIds.length === 0) {
       return res.status(400).json({ error: 'Please select at least one document.' });
     }
 
-    // ✅ Corrected variable name and query
+    // Convert IDs to numbers (avoid string/number mismatch)
+    documentsIds = documentsIds.map(Number);
+
+    // Fetch documents with extractedText
     const documents = await Document.findAll({
-      where: { userId, id: documentsIds },
+      where: {
+        userId,
+        id: { [Op.in]: documentsIds } // <-- fetch all documents matching IDs
+      },
       attributes: ['id', 'name', 'extractedText']
     });
 
@@ -25,24 +32,34 @@ export async function createOrUpdateStudyPlan(req, res) {
       return res.status(404).json({ message: 'No valid documents found for this user.' });
     }
 
-    // ✅ Pass examDates instead of examDate (you already send an object)
-    const tasks = generateTasks({ documents, freeDays, dailyHours, sessionDuration, examDates });
+    // Call AI helper to generate tasks
+    const tasks = await generateTasks({
+      documentsIds,
+      freeDays,
+      dailyHours,
+      sessionDuration,
+      examDates,
+      userId
+    });
 
-    // ✅ Find existing plan for the user
+    console.log("📝 Generated tasks:", tasks);
+
+    // Check if a study plan already exists
     let plan = await StudyPlan.findOne({ where: { userId } });
 
     if (plan) {
-      // Update existing
+      // Update existing plan
       plan.set({
         documents: documents.map(d => d.id),
         freeDays,
         dailyHours,
         sessionDuration,
-        tasks
+        tasks,
+        examDates
       });
       await plan.save();
     } else {
-      // Create new
+      // Create new plan
       plan = await StudyPlan.create({
         userId,
         documents: documents.map(d => d.id),
@@ -50,7 +67,7 @@ export async function createOrUpdateStudyPlan(req, res) {
         dailyHours,
         sessionDuration,
         tasks,
-        examDate: examDates?.[documents[0].id] || null
+        examDates
       });
     }
 
@@ -61,6 +78,7 @@ export async function createOrUpdateStudyPlan(req, res) {
     return res.status(500).json({ error: 'Server error' });
   }
 }
+
 
 
 /**
