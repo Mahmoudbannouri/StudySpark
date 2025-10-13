@@ -11,6 +11,7 @@ import { CalendarOptions, EventInput } from '@fullcalendar/core';
 import { StudyPlanService, StudyPlan as StudyPlanInterface } from '../../../services/studyPlan.service';
 import { AuthService } from '../../../services/auth.service';
 import { DocumentService } from '../../../services/document.service';
+
 interface Document {
   id: number;
   name: string;
@@ -20,12 +21,13 @@ interface Document {
 @Component({
   selector: 'app-study-plan',
   standalone: true,
-  imports: [CommonModule, FormsModule, SidebarComponent, PreferencesModalComponent, FullCalendarModule],
+  imports: [CommonModule, FormsModule, SidebarComponent, PreferencesModalComponent, FullCalendarModule,],
   templateUrl: './study-plan.component.html',
   styleUrls: ['./study-plan.component.scss']
 })
 export class StudyPlanComponent implements OnInit {
   generating = false;
+  showSuccess = false;
   user: any = null;
   showPreferencesModal = false;
   userPreferences: Preferences | null = null;
@@ -43,10 +45,12 @@ export class StudyPlanComponent implements OnInit {
     allDaySlot: false,
     slotMinTime: '00:00:00',
     slotMaxTime: '24:00:00',
+    timeZone: 'UTC',
     eventDidMount: (info) => {
-      const start = info.event.start?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const end = info.event.end?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      info.el.setAttribute('title', `${start} - ${end}`);
+      const start = info.event.start?.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC' });
+const end = info.event.end?.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'UTC' });
+info.el.setAttribute('title', `${start} - ${end}`);
+
       info.el.style.cursor = 'pointer';
       info.el.style.borderRadius = '6px';
       info.el.style.padding = '2px 4px';
@@ -116,15 +120,29 @@ export class StudyPlanComponent implements OnInit {
   };
 
   this.generating = true;
-  console.log('Sending payload:', payload);
 
   this.studyPlanService.createOrUpdateStudyPlan(payload).subscribe({
     next: (plan) => {
-      console.log('✅ Study plan created:', plan);
       this.currentPlan = plan;
       this.loadTasksIntoCalendar();
       this.showPreferencesModal = false;
+
+      // ✅ Show success overlay
       this.generating = false;
+      this.showSuccess = true;
+
+      // ⏳ Hide success overlay smoothly after 2 seconds
+      setTimeout(() => {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) {
+          overlay.classList.add('fade-out');
+        }
+
+        // Remove overlay entirely after fade
+        setTimeout(() => {
+          this.showSuccess = false;
+        }, 800);
+      }, 2000);
     },
     error: (err) => {
       console.error('Failed to generate study plan', err);
@@ -172,30 +190,24 @@ export class StudyPlanComponent implements OnInit {
   if (!this.currentPlan) return;
 
   const events: EventInput[] = this.currentPlan.tasks.map(task => {
-    // Convert date + time to start/end ISO strings
-    const [startHour, endHour] = task.time.split('-');
-    const startTime = `${task.date}T${startHour}:00.000Z`;
-    const endTime = `${task.date}T${endHour}:00.000Z`;
+    // Use startTime and endTime directly from AI response
+    const startTime = task.startTime;
+    const endTime = task.endTime;
+    console.log('Task times:', startTime, endTime); // <- verify these values
+    // Create a title
+    const title = `${task.subject || task.title}: ${task.description || ''}`.trim();
 
-    // Create a title for calendar
-    const title = `${task.subject}: ${task.topic}`;
-
-    // Assign a type (optional, default to 'study')
-    const type = 'study';
-
-    // Choose color based on type
-    
     return {
       title,
       start: startTime,
       end: endTime,
-     
     };
   });
 
   // Feed to your calendar library
   this.calendarOptions.events = events;
 }
+
 
 
 

@@ -4,7 +4,7 @@ import os
 import json
 import re
 from dotenv import load_dotenv
-
+from datetime import datetime, timedelta
 # Load env first
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
@@ -28,9 +28,21 @@ def generate_tasks_ai(documents, free_days, daily_hours, session_duration, exam_
     # Combine all document texts with their names
     docs_text = "\n".join([f"{doc['name']}:\n{doc['extractedText']}" for doc in documents])
     exams_text = json.dumps(exam_dates) if exam_dates else "No exam dates."
-
+    today = datetime.today().strftime("%Y-%m-%d")
     prompt = f"""
-You are a study planner AI. 
+You are a study planner AI.
+
+Today's date is {today}.
+⚠️ Very important:
+- Do NOT schedule any sessions before {today}.
+- All startTime and endTime values must be today or in the future.
+- All dates must be in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ).
+- Each session must last exactly {session_duration} hours.
+- Each session **must completely fit inside the user's free hours**.
+  - Example: if free hours on Saturday are 10:00-15:00, no session can start before 10:00 or end after 15:00.
+- If a session cannot fit in the current day's free hours, schedule it on the next available free day.
+- Do not overlap sessions.
+- Prioritize subjects based on difficulty and exam dates.
 
 User preferences:
 - Free days: {free_days}
@@ -42,11 +54,19 @@ Documents:
 {docs_text}
 
 Task:
-- Prioritize the subjects by difficulty and exams.
-- Split them into study sessions across the free days and hours.
+- Split the study material into sessions that respect the free days and daily hours.
 - Decide how many sessions each subject needs.
-- Return a JSON list of tasks only, inside a ```json ... ``` block.
+- Return a JSON list of tasks **exactly** with these fields:
+  - title
+  - description
+  - document
+  - startTime
+  - endTime
+  - type ("study", "review", "practice", "quiz")
+  - completed (boolean)
+- Return the JSON **only**, inside a ```json ... ``` block.
 """
+
 
     response = client.models.generate_content(
         model="gemini-2.5-flash",

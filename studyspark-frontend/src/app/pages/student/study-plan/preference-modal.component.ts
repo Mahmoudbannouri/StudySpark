@@ -29,7 +29,8 @@ export class PreferencesModalComponent {
   @Output() close = new EventEmitter<void>();
   @Output() save = new EventEmitter<Preferences>();
   @Output() generate = new EventEmitter<Preferences>();
-generating = false;
+  @Input() generating = false; 
+
 
 canGeneratePlan(): boolean {
   const hasDocument = this.preferences.documents.length > 0;
@@ -50,7 +51,7 @@ canGeneratePlan(): boolean {
 generatePlan() {
   if (!this.canGeneratePlan()) return;
 
-  this.generating = true;
+ 
   this.generate.emit(this.preferences);
 }
 

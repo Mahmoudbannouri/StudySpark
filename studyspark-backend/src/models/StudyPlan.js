@@ -26,8 +26,8 @@ const StudyPlan = sequelize.define('StudyPlan', {
 ,
 
   // Optional exam date for this document
-  examDate: {
-    type: DataTypes.DATE,
+  examDates: {
+    type: DataTypes.JSON,
     allowNull: true
   },
 
