@@ -19,90 +19,89 @@
       </div>
     </header>
 
-    <div class="chat-wrapper">
-      <!-- Document Selector -->
-      <div class="document-bar" *ngIf="!selectedDocument">
-        <button class="btn-docs-toggle" (click)="showDocSelector = !showDocSelector">
-          <i [class]="showDocSelector ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
-          {{ showDocSelector ? 'Hide document list' : 'Focus on specific document' }}
-        </button>
-      </div>
+    <div class="chat-flex-row">
+      <div class="chat-main-area">
+        <div class="chat-container">
+          <div class="chat-scroll" #messagesContainer>
+            <div
+              *ngFor="let message of messages"
+              class="message-wrapper"
+              [class.user-message]="message.isUser"
+              [class.bot-message]="!message.isUser"
+            >
+              <div class="message-bubble">
+                <div class="message-header" *ngIf="!message.isUser">
+                  <i class="bi bi-robot"></i>
+                  <span>AI Assistant</span>
+                </div>
+                <div class="message-text">{{ message.text }}</div>
+                <div class="message-time">{{ message.timestamp | date:'short' }}</div>
+              </div>
+            </div>
 
-      <div class="document-selector fade-in" *ngIf="showDocSelector && !selectedDocument">
-        <h4>Select a document to focus on</h4>
-        <div class="documents-grid">
+            <!-- Loading Indicator -->
+            <div class="message-wrapper bot-message" *ngIf="isLoading">
+              <div class="message-bubble">
+                <div class="message-header">
+                  <i class="bi bi-robot"></i>
+                  <span>AI Assistant</span>
+                </div>
+                <div class="typing-indicator">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Input -->
+          <div class="chat-input">
+            <textarea
+              [(ngModel)]="userInput"
+              (keypress)="onKeyPress($event)"
+              placeholder="Type your question..."
+              rows="1"
+              [disabled]="isLoading"
+            ></textarea>
+            <button class="btn-send" (click)="sendMessage()" [disabled]="!userInput.trim() || isLoading">
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Sessions bar on the right -->
+      <div class="sessions-bar">
+        <div class="sessions-header-vert">
+          <h4>Sessions</h4>
+          <button class="btn-new primary" (click)="onNewSession()" title="Start new conversation"><i class="bi bi-plus-lg"></i> New</button>
+        </div>
+        <div class="sessions-list-vert">
+          <div *ngIf="!sessions.length" class="no-sessions">
+            <i class="bi bi-chat-square"></i> No sessions yet. Click <strong>New</strong> to start!
+          </div>
           <div
-            *ngFor="let doc of documents"
-            class="document-card"
-            (click)="selectDocument(doc)"
+            class="session-item"
+            *ngFor="let s of sessions"
+            [class.active]="s.id === activeSessionId"
+            (click)="openSession(s)"
+            [attr.title]="s.title"
           >
-            <i class="bi bi-file-text"></i>
-            <div class="doc-info">
-              <strong>{{ doc.name }}</strong>
-              <small>{{ doc.fileType.toUpperCase() }}</small>
+            <div class="session-info">
+              <span class="session-icon" *ngIf="s.id === activeSessionId"><i class="bi bi-chat-dots-fill"></i></span>
+              <span class="session-title ellipsis" [attr.title]="s.title" *ngIf="editingSessionId !== s.id">{{ s.title || 'New session' }}</span>
+              <span *ngIf="editingSessionId !== s.id" class="session-rename" (click)="$event.stopPropagation(); startEditingSession(s)"><i class="bi bi-pencil"></i></span>
+              <form *ngIf="editingSessionId === s.id" (submit)="saveEditingSession(s, $event)" class="rename-form" (click)="$event.stopPropagation()">
+                <input [(ngModel)]="editingSessionTitle" name="title-{{s.id}}" autofocus required maxlength="50" (click)="$event.stopPropagation()" style="max-width:90px;"> 
+                <button type="submit" title="Save" class="icon-btn"><i class="bi bi-check-lg"></i></button> 
+                <button type="button" (click)="cancelEditingSession($event)" title="Cancel" class="icon-btn"><i class="bi bi-x-lg"></i></button>
+              </form>
+            </div>
+            <div class="session-extras">
+              <span class="session-badge" *ngIf="s.messageCount > 0">{{ s.messageCount }}</span>
+              <span class="session-time">{{ s.updatedAt | date:'short' }}</span>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Current Document -->
-      <div class="current-document" *ngIf="selectedDocument">
-        <div class="focused-doc">
-          <i class="bi bi-file-text-fill me-2"></i>
-          <span>Focused on: <strong>{{ selectedDocument }}</strong></span>
-        </div>
-        <button class="btn-clear" (click)="selectedDocument = null; showDocSelector = false">
-          <i class="bi bi-x-circle"></i> Clear
-        </button>
-      </div>
-
-      <!-- Chat Container -->
-      <div class="chat-container">
-        <div class="chat-scroll" #messagesContainer>
-          <div
-            *ngFor="let message of messages"
-            class="message-wrapper"
-            [class.user-message]="message.isUser"
-            [class.bot-message]="!message.isUser"
-          >
-            <div class="message-bubble">
-              <div class="message-header" *ngIf="!message.isUser">
-                <i class="bi bi-robot"></i>
-                <span>AI Assistant</span>
-              </div>
-              <div class="message-text">{{ message.text }}</div>
-              <div class="message-time">{{ message.timestamp | date:'short' }}</div>
-            </div>
-          </div>
-
-          <!-- Loading Indicator -->
-          <div class="message-wrapper bot-message" *ngIf="isLoading">
-            <div class="message-bubble">
-              <div class="message-header">
-                <i class="bi bi-robot"></i>
-                <span>AI Assistant</span>
-              </div>
-              <div class="typing-indicator">
-                <span></span><span></span><span></span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Input -->
-        <div class="chat-input">
-          <textarea
-            [(ngModel)]="userInput"
-            (keypress)="onKeyPress($event)"
-            placeholder="Type your question..."
-            rows="1"
-            [disabled]="isLoading"
-          ></textarea>
-          <button class="btn-send" (click)="sendMessage()" [disabled]="!userInput.trim() || isLoading">
-            <i class="bi bi-send-fill"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+    </div> <!-- end .chat-flex-row -->
+  </div> <!-- end .main-content -->
+</div> <!-- end .student-layout -->

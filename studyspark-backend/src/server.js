@@ -13,6 +13,7 @@ import "./models/Summary.js";
 import "./models/Flashcard.js";
 import "./models/Quiz.js";
 import "./models/ChatMessage.js";
+import "./models/ChatSession.js";
 import "./models/StudyPlan.js";
 import "./models/MindMap.js";
 
