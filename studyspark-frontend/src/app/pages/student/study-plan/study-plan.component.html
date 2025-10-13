@@ -1,5 +1,25 @@
 <div class="student-layout">
   <app-sidebar></app-sidebar>
+  <!-- AI Loading / Success Overlay -->
+<div *ngIf="generating || showSuccess" class="loading-overlay" [ngClass]="{'success': showSuccess}">
+  <div class="ai-robot">
+    <div *ngIf="!showSuccess" class="robot-head">🤖</div>
+    <div *ngIf="!showSuccess" class="robot-arms">
+      <div class="arm left"></div>
+      <div class="arm right"></div>
+    </div>
+
+    <div *ngIf="showSuccess" class="success-check">
+      ✅
+    </div>
+
+    <p>
+      {{ showSuccess ? 'Study Plan Generated!' : 'AI is thinking...' }}
+    </p>
+  </div>
+</div>
+
+
 
   <div class="main-content">
     <header class="top-header">
@@ -49,9 +69,10 @@
           <app-preferences-modal
             [show]="showPreferencesModal"
             [availableDocuments]="availableDocuments"
+            [generating]="generating"
             (close)="closePreferences()"
             (save)="savePreferences($event)"
-            (generate)="generatePlan($event)">
+            (generate)="generatePlan($event)">                     
           </app-preferences-modal>
         </div>
 

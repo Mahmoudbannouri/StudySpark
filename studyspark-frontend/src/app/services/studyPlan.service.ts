@@ -6,9 +6,12 @@ import { AuthService } from './auth.service';
 interface Task {
   date: string;
   day: string;
-  time: string;
+  startTime: string;
+  endTime: string;
   subject: string;
   topic: string;
+  title: string;
+  description: string;
  
 }
 
