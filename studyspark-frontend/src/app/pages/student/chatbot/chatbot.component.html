@@ -2,56 +2,63 @@
   <app-sidebar></app-sidebar>
 
   <div class="main-content">
-    <header class="top-header">
+    <header class="top-header glassy-header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="page-title">Intelegent Study Chatbot</h1>
-          <p class="page-subtitle">Ask questions about your documents</p>
+          <h1 class="page-title">Intelligent Study Chatbot 🤖</h1>
+          <p class="page-subtitle">Ask questions about your uploaded documents or notes</p>
         </div>
         <div class="header-right" *ngIf="user">
           <div class="user-badge">
-            <span class="user-name"><i class="bi bi-person-circle"></i> {{ user.fullname }}</span>
+            <span class="user-name">
+              <i class="bi bi-person-circle"></i> {{ user.fullname }}
+            </span>
             <span class="user-id">ID: {{ user.id }}</span>
           </div>
         </div>
       </div>
     </header>
 
-    <div class="content-area">
-      <div class="chatbot-container">
-        <!-- Optional Document Selector (collapsed by default) -->
-        <div class="document-selector-toggle" *ngIf="!selectedDocument">
-          <button class="btn-toggle-docs" (click)="showDocSelector = !showDocSelector">
-            <i [class]="showDocSelector ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
-            {{ showDocSelector ? 'Hide' : 'Focus on specific document' }} (optional)
-          </button>
-        </div>
+    <div class="chat-wrapper">
+      <!-- Document Selector -->
+      <div class="document-bar" *ngIf="!selectedDocument">
+        <button class="btn-docs-toggle" (click)="showDocSelector = !showDocSelector">
+          <i [class]="showDocSelector ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
+          {{ showDocSelector ? 'Hide document list' : 'Focus on specific document' }}
+        </button>
+      </div>
 
-        <div class="document-selector" *ngIf="!selectedDocument && showDocSelector">
-          <h4 class="mb-3">Select a document to focus on:</h4>
-          <div class="documents-grid">
-            <div
-              *ngFor="let doc of documents"
-              class="document-card"
-              (click)="selectDocument(doc)"
-            >
-              <i class="bi bi-file-text-fill"></i>
-              <span>{{ doc.name }}</span>
+      <div class="document-selector fade-in" *ngIf="showDocSelector && !selectedDocument">
+        <h4>Select a document to focus on</h4>
+        <div class="documents-grid">
+          <div
+            *ngFor="let doc of documents"
+            class="document-card"
+            (click)="selectDocument(doc)"
+          >
+            <i class="bi bi-file-text"></i>
+            <div class="doc-info">
+              <strong>{{ doc.name }}</strong>
+              <small>{{ doc.fileType.toUpperCase() }}</small>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Current Document Badge -->
-        <div class="current-document" *ngIf="selectedDocument">
+      <!-- Current Document -->
+      <div class="current-document" *ngIf="selectedDocument">
+        <div class="focused-doc">
           <i class="bi bi-file-text-fill me-2"></i>
-          <span>Focused on: {{ selectedDocument }}</span>
-          <button class="btn-change" (click)="selectedDocument = null; showDocSelector = false">
-            <i class="bi bi-x-circle me-1"></i> Clear Focus (use all documents)
-          </button>
+          <span>Focused on: <strong>{{ selectedDocument }}</strong></span>
         </div>
+        <button class="btn-clear" (click)="selectedDocument = null; showDocSelector = false">
+          <i class="bi bi-x-circle"></i> Clear
+        </button>
+      </div>
 
-        <!-- Chat Messages -->
-        <div class="chat-messages" #messagesContainer>
+      <!-- Chat Container -->
+      <div class="chat-container">
+        <div class="chat-scroll" #messagesContainer>
           <div
             *ngFor="let message of messages"
             class="message-wrapper"
@@ -64,12 +71,11 @@
                 <span>AI Assistant</span>
               </div>
               <div class="message-text">{{ message.text }}</div>
-              <div class="message-time">
-                {{ message.timestamp | date:'short' }}
-              </div>
+              <div class="message-time">{{ message.timestamp | date:'short' }}</div>
             </div>
           </div>
 
+          <!-- Loading Indicator -->
           <div class="message-wrapper bot-message" *ngIf="isLoading">
             <div class="message-bubble">
               <div class="message-header">
@@ -77,35 +83,24 @@
                 <span>AI Assistant</span>
               </div>
               <div class="typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
+                <span></span><span></span><span></span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Input Area -->
-        <div class="chat-input-area">
-          <div class="input-wrapper">
-            <textarea
-              [(ngModel)]="userInput"
-              (keypress)="onKeyPress($event)"
-              placeholder="Ask a question about your document..."
-              rows="1"
-              [disabled]="!selectedDocument"
-            ></textarea>
-            <button
-              class="btn-send"
-              (click)="sendMessage()"
-              [disabled]="!userInput.trim() || !selectedDocument || isLoading"
-            >
-              <i class="bi bi-send-fill"></i>
-            </button>
-          </div>
-          <p class="input-hint" *ngIf="selectedDocument">
-            Press Enter to send, Shift+Enter for new line
-          </p>
+        <!-- Input -->
+        <div class="chat-input">
+          <textarea
+            [(ngModel)]="userInput"
+            (keypress)="onKeyPress($event)"
+            placeholder="Type your question..."
+            rows="1"
+            [disabled]="isLoading"
+          ></textarea>
+          <button class="btn-send" (click)="sendMessage()" [disabled]="!userInput.trim() || isLoading">
+            <i class="bi bi-send-fill"></i>
+          </button>
         </div>
       </div>
     </div>

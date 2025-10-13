@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component';
 import { AuthService } from '../../../services/auth.service';
 import { DocumentService } from '../../../services/document.service';
+import { ChatService } from '../../../services/chat.service';
 
 interface Message {
   text: string;
@@ -31,8 +32,10 @@ export class ChatbotComponent implements OnInit {
 
   constructor(
     private auth: AuthService,
-    private documentService: DocumentService
+    private documentService: DocumentService,
+    private chatService: ChatService
   ) {}
+  
 
   ngOnInit(): void {
     this.user = this.auth.getUserInfo();
@@ -59,19 +62,33 @@ export class ChatbotComponent implements OnInit {
 
   sendMessage(): void {
     if (!this.userInput.trim()) return;
-
+  
     const userMessage = this.userInput.trim();
     this.addUserMessage(userMessage);
     this.userInput = '';
     this.isLoading = true;
-
-    // Simulate AI response
-    setTimeout(() => {
-      this.simulateAIResponse(userMessage);
-      this.isLoading = false;
-      this.scrollToBottom();
-    }, 1500);
+  
+    const documentId = this.selectedDocument ? this.documents.find(d => d.name === this.selectedDocument)?.id : null;
+  
+    this.chatService.askQuestion(userMessage, documentId).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        if (res?.chat?.answer) {
+          this.addBotMessage(res.chat.answer);
+        } else if (res?.answer) {
+          this.addBotMessage(res.answer);
+        } else {
+          this.addBotMessage('⚠️ No response received from AI.');
+        }
+      },
+      error: (err) => {
+        console.error('Chat error:', err);
+        this.isLoading = false;
+        this.addBotMessage('❌ Error connecting to AI assistant.');
+      }
+    });
   }
+  
 
   private simulateAIResponse(question: string): void {
     // This is a mock response. In production, this would call your backend RAG model
