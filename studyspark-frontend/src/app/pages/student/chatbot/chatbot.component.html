@@ -2,27 +2,32 @@
   <app-sidebar></app-sidebar>
 
   <div class="main-content">
-    <header class="top-header glassy-header">
+    <!-- Simplified Header -->
+    <header class="top-header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="page-title">Intelligent Study Chatbot 🤖</h1>
-          <p class="page-subtitle">Ask questions about your uploaded documents or notes</p>
+          <h1 class="page-title">
+            <i class="bi bi-robot"></i>
+            AI Study Assistant
+          </h1>
+          <p class="page-subtitle">Powered by RAG • Ask questions about your documents</p>
         </div>
         <div class="header-right" *ngIf="user">
           <div class="user-badge">
-            <span class="user-name">
-              <i class="bi bi-person-circle"></i> {{ user.fullname }}
-            </span>
-            <span class="user-id">ID: {{ user.id }}</span>
+            <i class="bi bi-person-circle"></i>
+            <span class="user-name">{{ user.fullname }}</span>
           </div>
         </div>
       </div>
     </header>
 
-    <div class="chat-flex-row">
-      <div class="chat-main-area">
+    <!-- Main Chat Area with Sessions Sidebar -->
+    <div class="chat-wrapper">
+      <!-- Left: Chat Interface -->
+      <div class="chat-section">
         <div class="chat-container">
-          <div class="chat-scroll" #messagesContainer>
+          <!-- Messages Area -->
+          <div class="messages-area" #messagesContainer>
             <div
               *ngFor="let message of messages"
               class="message-wrapper"
@@ -31,7 +36,7 @@
             >
               <div class="message-bubble">
                 <div class="message-header" *ngIf="!message.isUser">
-                  <i class="bi bi-robot"></i>
+                  <i class="bi bi-stars"></i>
                   <span>AI Assistant</span>
                 </div>
                 <div class="message-text">{{ message.text }}</div>
@@ -41,9 +46,9 @@
 
             <!-- Loading Indicator -->
             <div class="message-wrapper bot-message" *ngIf="isLoading">
-              <div class="message-bubble">
+              <div class="message-bubble loading-bubble">
                 <div class="message-header">
-                  <i class="bi bi-robot"></i>
+                  <i class="bi bi-stars"></i>
                   <span>AI Assistant</span>
                 </div>
                 <div class="typing-indicator">
@@ -53,55 +58,106 @@
             </div>
           </div>
 
-          <!-- Input -->
-          <div class="chat-input">
-            <textarea
-              [(ngModel)]="userInput"
-              (keypress)="onKeyPress($event)"
-              placeholder="Type your question..."
-              rows="1"
-              [disabled]="isLoading"
-            ></textarea>
-            <button class="btn-send" (click)="sendMessage()" [disabled]="!userInput.trim() || isLoading">
-              <i class="bi bi-send-fill"></i>
-            </button>
+          <!-- Input Area -->
+          <div class="input-area">
+            <div class="input-wrapper">
+              <textarea
+                [(ngModel)]="userInput"
+                (keypress)="onKeyPress($event)"
+                placeholder="Ask me anything about your study materials..."
+                rows="1"
+                [disabled]="isLoading"
+              ></textarea>
+              <button 
+                class="send-btn" 
+                (click)="sendMessage()" 
+                [disabled]="!userInput.trim() || isLoading"
+                [title]="isLoading ? 'Sending...' : 'Send message'"
+              >
+                <i [class]="isLoading ? 'bi bi-hourglass-split' : 'bi bi-send-fill'"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
-      <!-- Sessions bar on the right -->
-      <div class="sessions-bar">
-        <div class="sessions-header-vert">
-          <h4>Sessions</h4>
-          <button class="btn-new primary" (click)="onNewSession()" title="Start new conversation"><i class="bi bi-plus-lg"></i> New</button>
+
+      <!-- Right: Sessions Sidebar -->
+      <aside class="sessions-sidebar">
+        <div class="sessions-header">
+          <h3>
+            <i class="bi bi-clock-history"></i>
+            Chat History
+          </h3>
+          <button class="new-session-btn" (click)="onNewSession()" title="Start new conversation">
+            <i class="bi bi-plus-circle"></i>
+            <span>New Chat</span>
+          </button>
         </div>
-        <div class="sessions-list-vert">
-          <div *ngIf="!sessions.length" class="no-sessions">
-            <i class="bi bi-chat-square"></i> No sessions yet. Click <strong>New</strong> to start!
+
+        <div class="sessions-list">
+          <div *ngIf="!sessions.length" class="empty-state">
+            <i class="bi bi-chat-square-text"></i>
+            <p>No conversations yet</p>
+            <small>Click "New Chat" to start</small>
           </div>
+
           <div
-            class="session-item"
+            class="session-card"
             *ngFor="let s of sessions"
             [class.active]="s.id === activeSessionId"
             (click)="openSession(s)"
-            [attr.title]="s.title"
           >
-            <div class="session-info">
-              <span class="session-icon" *ngIf="s.id === activeSessionId"><i class="bi bi-chat-dots-fill"></i></span>
-              <span class="session-title ellipsis" [attr.title]="s.title" *ngIf="editingSessionId !== s.id">{{ s.title || 'New session' }}</span>
-              <span *ngIf="editingSessionId !== s.id" class="session-rename" (click)="$event.stopPropagation(); startEditingSession(s)"><i class="bi bi-pencil"></i></span>
-              <form *ngIf="editingSessionId === s.id" (submit)="saveEditingSession(s, $event)" class="rename-form" (click)="$event.stopPropagation()">
-                <input [(ngModel)]="editingSessionTitle" name="title-{{s.id}}" autofocus required maxlength="50" (click)="$event.stopPropagation()" style="max-width:90px;"> 
-                <button type="submit" title="Save" class="icon-btn"><i class="bi bi-check-lg"></i></button> 
-                <button type="button" (click)="cancelEditingSession($event)" title="Cancel" class="icon-btn"><i class="bi bi-x-lg"></i></button>
-              </form>
-            </div>
-            <div class="session-extras">
-              <span class="session-badge" *ngIf="s.messageCount > 0">{{ s.messageCount }}</span>
-              <span class="session-time">{{ s.updatedAt | date:'short' }}</span>
+            <div class="session-main">
+              <div class="session-icon">
+                <i [class]="s.id === activeSessionId ? 'bi bi-chat-dots-fill' : 'bi bi-chat-dots'"></i>
+              </div>
+              <div class="session-content">
+                <div class="session-title-row" *ngIf="editingSessionId !== s.id">
+                  <span class="session-title">{{ s.title || 'New conversation' }}</span>
+                  <button 
+                    class="edit-btn" 
+                    (click)="$event.stopPropagation(); startEditingSession(s)"
+                    title="Rename"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                </div>
+                
+                <form 
+                  *ngIf="editingSessionId === s.id" 
+                  (submit)="saveEditingSession(s, $event)" 
+                  class="edit-form"
+                  (click)="$event.stopPropagation()"
+                >
+                  <input 
+                    [(ngModel)]="editingSessionTitle" 
+                    name="title-{{s.id}}" 
+                    autofocus 
+                    required 
+                    maxlength="50"
+                    (click)="$event.stopPropagation()"
+                  >
+                  <div class="edit-actions">
+                    <button type="submit" class="save-btn" title="Save">
+                      <i class="bi bi-check-lg"></i>
+                    </button>
+                    <button type="button" (click)="cancelEditingSession($event)" class="cancel-btn" title="Cancel">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </form>
+
+                <div class="session-meta">
+                  <span class="message-count" *ngIf="s.messageCount > 0">
+                    <i class="bi bi-chat"></i> {{ s.messageCount }}
+                  </span>
+                  <span class="session-date">{{ s.updatedAt | date:'short' }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div> <!-- end .chat-flex-row -->
-  </div> <!-- end .main-content -->
-</div> <!-- end .student-layout -->
+      </aside>
+    </div>
+  </div>
+</div>

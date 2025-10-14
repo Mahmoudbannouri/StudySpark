@@ -90,7 +90,6 @@ router.get('/export/:userId', async (req, res) => {
           'id',
           'userId',
           'documents',
-          'examDate',
           'tasks',
           'freeDays',
           'dailyHours',
