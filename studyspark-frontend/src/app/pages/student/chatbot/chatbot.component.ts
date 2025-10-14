@@ -12,6 +12,17 @@ interface Message {
   timestamp: Date;
 }
 
+interface ChatApiMessage {
+  id: number;
+  userId: number;
+  documentId?: number | null;
+  question: string;
+  answer: string;
+  sources?: any;
+  confidence?: number | null;
+  createdAt: string;
+}
+
 @Component({
   selector: 'app-chatbot',
   standalone: true,
@@ -29,6 +40,11 @@ export class ChatbotComponent implements OnInit {
   showDocSelector = false;
   user: any = null;
   documents: any[] = [];
+  sessions: any[] = [];
+  activeSessionId: number | null = null;
+  editingSessionId: number | null = null;
+  editingSessionTitle: string = '';
+  readonly SESSION_KEY = 'ss_activeSessionId';
 
   constructor(
     private auth: AuthService,
@@ -41,6 +57,21 @@ export class ChatbotComponent implements OnInit {
     this.user = this.auth.getUserInfo();
     this.loadDocuments();
     this.addBotMessage('Hello! 👋 I\'m your AI study assistant powered by RAG (Retrieval-Augmented Generation). I can answer questions about all your uploaded documents! Ask me anything, or optionally select a specific document to focus on.');
+    this.loadSessions(() => {
+      // After sessions loaded, auto-select session
+      const storedId = this.getSessionFromStorage();
+      if (storedId && this.sessions.some(s => s.id === storedId)) {
+        this.openSession(this.sessions.find(s => s.id === storedId));
+      } else if (this.sessions.length) {
+        // Open most recent
+        this.openSession(this.sessions[0]);
+      } else {
+        // Fallback: show all chat messages
+        this.messages = [];
+        this.loadAllChatHistory();
+        this.activeSessionId = null;
+      }
+    });
   }
 
   loadDocuments(): void {
@@ -57,6 +88,9 @@ export class ChatbotComponent implements OnInit {
 
   selectDocument(doc: any): void {
     this.selectedDocument = doc.name;
+    // Load chat history for this specific document
+    this.messages = [];
+    this.loadDocumentChat(doc.id);
     this.addBotMessage(`Great! I'll now focus on "${doc.name}". But remember, I still have access to all your other documents if needed. What would you like to know?`);
   }
 
@@ -70,16 +104,23 @@ export class ChatbotComponent implements OnInit {
   
     const documentId = this.selectedDocument ? this.documents.find(d => d.name === this.selectedDocument)?.id : null;
   
-    this.chatService.askQuestion(userMessage, documentId).subscribe({
+    this.chatService.askQuestion(userMessage, documentId, false, this.activeSessionId).subscribe({
       next: (res) => {
         this.isLoading = false;
         if (res?.chat?.answer) {
           this.addBotMessage(res.chat.answer);
+          // bump session if created
+          if (res?.chat?.sessionId) {
+            this.activeSessionId = res.chat.sessionId;
+            this.setSessionToStorage(res.chat.sessionId);
+          }
         } else if (res?.answer) {
           this.addBotMessage(res.answer);
         } else {
           this.addBotMessage('⚠️ No response received from AI.');
         }
+        // Always refresh session list after send
+        this.loadSessions();
       },
       error: (err) => {
         console.error('Chat error:', err);
@@ -106,6 +147,152 @@ export class ChatbotComponent implements OnInit {
 
     const randomResponse = responses[Math.floor(Math.random() * responses.length)];
     this.addBotMessage(randomResponse);
+  }
+
+  private loadAllChatHistory(): void {
+    this.chatService.getAllUserChats().subscribe({
+      next: (items: ChatApiMessage[]) => {
+        // API returns newest first; render oldest to newest
+        const ordered = [...items].reverse();
+        for (const msg of ordered) {
+          // push user question then bot answer
+          this.messages.push({ text: msg.question, isUser: true, timestamp: new Date(msg.createdAt) });
+          this.messages.push({ text: msg.answer, isUser: false, timestamp: new Date(msg.createdAt) });
+        }
+        this.scrollToBottom();
+      },
+      error: (err) => {
+        console.error('Error loading chat history:', err);
+      }
+    });
+  }
+
+  private loadDocumentChat(documentId: number): void {
+    this.chatService.getDocumentChat(documentId).subscribe({
+      next: (items: any[]) => {
+        const ordered = [...items]; // already ASC by createdAt per backend
+        for (const msg of ordered) {
+          this.messages.push({ text: msg.question, isUser: true, timestamp: new Date(msg.createdAt) });
+          this.messages.push({ text: msg.answer, isUser: false, timestamp: new Date(msg.createdAt) });
+        }
+        this.scrollToBottom();
+      },
+      error: (err) => {
+        console.error('Error loading document chat:', err);
+      }
+    });
+  }
+
+  private loadSessions(cb?: () => void): void {
+    this.chatService.listSessions().subscribe({
+      next: (items) => {
+        this.sessions = (items || []).map((s: any) => ({ ...s, messageCount: 0 }));
+        if (!this.sessions.length) {
+          if (cb) cb();
+          return;
+        }
+        // Fetch message count for each session in parallel
+        let done = 0;
+        this.sessions.forEach((session, idx) => {
+          this.chatService.getSessionMessages(session.id).subscribe({
+            next: (msgs) => {
+              this.sessions[idx].messageCount = msgs ? msgs.length : 0;
+              done++;
+              if (done === this.sessions.length && cb) cb();
+            },
+            error: () => {
+              done++;
+              if (done === this.sessions.length && cb) cb();
+            }
+          });
+        });
+        // Cover sessions=0 as completion
+        if (this.sessions.length === 0 && cb) cb();
+      },
+      error: (err) => {
+        console.error('Error loading sessions:', err);
+        if (cb) cb();
+      }
+    });
+  }
+
+  startEditingSession(session: any): void {
+    this.editingSessionId = session.id;
+    this.editingSessionTitle = session.title || '';
+    setTimeout(() => {
+      // Focus input
+      const input: HTMLInputElement | null = document.querySelector(`input[name='title-${session.id}']`);
+      if (input) input.focus();
+    }, 10);
+  }
+
+  saveEditingSession(session: any, event: Event): void {
+    event.preventDefault();
+    if (this.editingSessionTitle && this.editingSessionId) {
+      this.chatService.renameSession(this.editingSessionId, this.editingSessionTitle).subscribe({
+        next: () => {
+          this.editingSessionId = null;
+          this.editingSessionTitle = '';
+          this.loadSessions(() => {
+            // After reload, retry selection
+            const found = this.sessions.find(s => s.id === session.id);
+            if (found) this.openSession(found);
+          });
+        },
+        error: (err) => {
+          alert('Could not rename session.');
+          this.editingSessionId = null;
+          this.editingSessionTitle = '';
+        }
+      });
+    }
+  }
+
+  cancelEditingSession(event: Event): void {
+    if(event) event.preventDefault();
+    this.editingSessionId = null;
+    this.editingSessionTitle = '';
+  }
+
+  openSession(session: any): void {
+    if (!session) return;
+    this.activeSessionId = session.id;
+    this.setSessionToStorage(session.id);
+    this.messages = [];
+    this.chatService.getSessionMessages(session.id).subscribe({
+      next: (items) => {
+        for (const msg of items) {
+          this.messages.push({ text: msg.question, isUser: true, timestamp: new Date(msg.createdAt) });
+          this.messages.push({ text: msg.answer, isUser: false, timestamp: new Date(msg.createdAt) });
+        }
+        this.scrollToBottom();
+      },
+      error: (err) => console.error('Error loading session messages:', err)
+    });
+  }
+
+  onNewSession(): void {
+    this.chatService.createSession('New session').subscribe({
+      next: (session) => {
+        this.sessions.unshift(session);
+        this.setSessionToStorage(session.id);
+        this.openSession(session);
+        this.loadSessions(); // Always reload
+      },
+      error: (err) => console.error('Error creating session:', err)
+    });
+  }
+
+  private setSessionToStorage(id: number | null) {
+    if (id) {
+      localStorage.setItem(this.SESSION_KEY, String(id));
+    } else {
+      localStorage.removeItem(this.SESSION_KEY);
+    }
+  }
+  private getSessionFromStorage(): number | null {
+    const val = localStorage.getItem(this.SESSION_KEY);
+    return val ? Number(val) : null;
   }
 
   private addUserMessage(text: string): void {

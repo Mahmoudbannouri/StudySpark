@@ -7,6 +7,14 @@ const ChatMessage = sequelize.define('ChatMessage', {
     primaryKey: true,
     autoIncrement: true
   },
+  sessionId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'chat_sessions',
+      key: 'id'
+    }
+  },
   documentId: {
     type: DataTypes.INTEGER,
     allowNull: true, // Can be null for general chat

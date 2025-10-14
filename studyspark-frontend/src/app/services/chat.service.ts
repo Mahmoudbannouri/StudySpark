@@ -14,10 +14,10 @@ export class ChatService {
   /**
    * Ask a question (with optional document context)
    */
-  askQuestion(question: string, documentId?: number, useWebSearch: boolean = false): Observable<any> {
+  askQuestion(question: string, documentId?: number, useWebSearch: boolean = false, sessionId?: number | null): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/ask`,
-      { documentId: documentId || null, question, useWebSearch },
+      { documentId: documentId || null, question, useWebSearch, sessionId: sessionId || null },
       { headers: this.auth.getAuthHeaders() }
     );
   }
@@ -37,6 +37,25 @@ export class ChatService {
   getAllUserChats(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/all`, {
       headers: this.auth.getAuthHeaders()
+    });
+  }
+
+  // Sessions
+  listSessions(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/sessions`, { headers: this.auth.getAuthHeaders() });
+  }
+
+  createSession(title?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/sessions`, { title }, { headers: this.auth.getAuthHeaders() });
+  }
+
+  getSessionMessages(sessionId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/sessions/${sessionId}/messages`, { headers: this.auth.getAuthHeaders() });
+  }
+
+  renameSession(sessionId: number, title: string): Observable<any> {
+    return this.http.patch<any>(`${this.apiUrl}/sessions/${sessionId}`, { title }, {
+      headers: this.auth.getAuthHeaders(),
     });
   }
 

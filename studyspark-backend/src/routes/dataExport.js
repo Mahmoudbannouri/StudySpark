@@ -1,6 +1,8 @@
 import express from 'express';
 import Document from '../models/Document.js';
 import Summary from '../models/Summary.js';
+import ChatMessage from '../models/ChatMessage.js';
+import ChatSession from '../models/ChatSession.js';
 import Quiz from '../models/Quiz.js';
 import Flashcard from '../models/Flashcard.js';
 import StudyPlan from '../models/StudyPlan.js';
@@ -25,34 +27,102 @@ router.get('/export/:userId', async (req, res) => {
           'filePath',
           'fileType',
           'fileSize',
+          'wordCount',
           'extractedText',
           'transcription',
-          'status'
+          'isTranscribed',
+          'status',
+          'uploadedAt',
+          'createdAt',
+          'updatedAt'
         ]
       }),
 
       // ✅ Summaries
       summaries: await Summary.findAll({
         where: { userId },
-        attributes: ['id', 'userId', 'documentId', 'length', 'content', 'keyPoints']
+        attributes: [
+          'id',
+          'userId',
+          'documentId',
+          'length',
+          'content',
+          'keyPoints',
+          'generatedAt',
+          'createdAt',
+          'updatedAt'
+        ]
       }),
 
       // ✅ Flashcards
       flashcards: await Flashcard.findAll({
         where: { userId },
-        attributes: ['id', 'userId', 'setName', 'cards', 'totalCards']
+        attributes: [
+          'id',
+          'userId',
+          'setName',
+          'cards',
+          'totalCards',
+          'createdAt',
+          'updatedAt'
+        ]
       }),
 
       // ✅ Quizzes
       quiz: await Quiz.findAll({
         where: { userId },
-        attributes: ['id', 'userId', 'title', 'questions', 'score', 'completed']
+        attributes: [
+          'id',
+          'userId',
+          'title',
+          'questions',
+          'score',
+          'completed',
+          'createdAt',
+          'updatedAt'
+        ]
       }),
 
       // ✅ Study plans
       study_plans: await StudyPlan.findAll({
         where: { userId },
-        attributes: ['id', 'userId', 'title', 'examDate', 'tasks', 'progress']
+        attributes: [
+          'id',
+          'userId',
+          'documents',
+          'tasks',
+          'freeDays',
+          'dailyHours',
+          'sessionDuration',
+          'createdAt',
+          'updatedAt'
+        ]
+      }),
+
+      // ✅ Chat history (last 200 messages across all contexts)
+      chats: await ChatMessage.findAll({
+        where: { userId },
+        attributes: [
+          'id',
+          'userId',
+          'sessionId',
+          'documentId',
+          'question',
+          'answer',
+          'sources',
+          'confidence',
+          'createdAt',
+          'updatedAt'
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: 200
+      }),
+
+      // ✅ Chat sessions
+      chat_sessions: await ChatSession.findAll({
+        where: { userId },
+        attributes: ['id', 'userId', 'title', 'createdAt', 'updatedAt'],
+        order: [['updatedAt', 'DESC']]
       }),
 
       // No notes yet
