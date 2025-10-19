@@ -51,6 +51,12 @@ const ChatMessage = sequelize.define('ChatMessage', {
     type: DataTypes.FLOAT, // AI confidence score
     allowNull: true
   },
+   // ✅ ADD THIS: Store Flask's UUID session separately
+   ragSessionId: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    comment: 'Flask RAG session UUID for context tracking'
+  },
   createdAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
@@ -59,5 +65,6 @@ const ChatMessage = sequelize.define('ChatMessage', {
   tableName: 'chat_messages',
   timestamps: true
 });
+
 
 export default ChatMessage;

@@ -45,7 +45,7 @@ router.get('/export/:userId', async (req, res) => {
           'id',
           'userId',
           'documentId',
-          'length',
+          'type',
           'content',
           'keyPoints',
           'generatedAt',

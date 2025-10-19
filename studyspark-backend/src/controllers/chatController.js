@@ -3,30 +3,42 @@ import Document from '../models/Document.js';
 import ChatSession from '../models/ChatSession.js';
 import axios from 'axios';
 
+// controllers/chatController.js
 export const askQuestion = async (req, res) => {
   try {
     const userId = req.user.id;
     const { question, documentId, sessionId } = req.body;
 
+    // Get previous RAG session if exists
+    let ragSessionId = null;
+    if (sessionId) {
+      const prevChat = await ChatMessage.findOne({
+        where: { sessionId, userId },
+        order: [['createdAt', 'DESC']]
+      });
+      ragSessionId = prevChat?.ragSessionId || null;
+    }
+
+    // ✅ Pass RAG session to Flask
     const response = await axios.post('http://localhost:5004/ask', {
-      user_id: userId,  // ✅ send plain numeric ID
-      question
+      user_id: userId,
+      question,
+      session_id: ragSessionId  // Send Flask's UUID
     });
-    
 
     const answer = response.data.answer || 'No answer generated.';
-    const confidence = response.data.confidence || null;
-    const sources = response.data.sources || null;
+    const returnedRagSessionId = response.data.session_id;  // Get Flask's UUID back
 
     // Save in your chat_messages table
     const chat = await ChatMessage.create({
       userId,
       documentId,
-      sessionId: sessionId || null,
+      sessionId: sessionId || null,  // Your DB session ID
+      ragSessionId: returnedRagSessionId,  // Flask's session ID
       question,
       answer,
-      sources,
-      confidence
+      sources: response.data.sources,
+      confidence: response.data.confidence
     });
 
     res.json({ ok: true, chat });
