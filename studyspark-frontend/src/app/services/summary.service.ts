@@ -12,11 +12,34 @@ export class SummaryService {
   constructor(private http: HttpClient, private auth: AuthService) {}
 
   /**
-   * Generate summary for a document
+   * ✅ Generate summary from uploaded file
+   * Sends file directly to backend
    */
-  generateSummary(documentId: number, length: 'short' | 'medium' | 'detailed'): Observable<any> {
+  generateSummaryFromFile(
+    file: File, 
+    length: 'short' | 'medium' | 'detailed'
+  ): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('length', length);
+
     return this.http.post(
-      `${this.apiUrl}/generate`,
+      `${this.apiUrl}/generate/upload`,
+      formData,
+      { headers: this.auth.getAuthHeaders() }
+    );
+  }
+
+  /**
+   * ✅ Generate summary from existing document
+   * Backend fetches file from storage
+   */
+  generateSummaryFromDocument(
+    documentId: number,
+    length: 'short' | 'medium' | 'detailed'
+  ): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/generate/document`,
       { documentId, length },
       { headers: this.auth.getAuthHeaders() }
     );
