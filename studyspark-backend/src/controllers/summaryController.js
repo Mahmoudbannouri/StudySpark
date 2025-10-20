@@ -13,12 +13,12 @@ const upload = multer(); // middleware pour gérer les fichiers
  * Sauvegarde le résumé dans la DB
  */
 export const generateSummary = [
-  upload.single('file'), // middleware multer
+  upload.single('file'),
   async (req, res) => {
     try {
       const { documentId, length } = req.body;
 
-      // Vérification de l'upload
+      // Vérification du fichier
       if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
       }
@@ -52,29 +52,29 @@ export const generateSummary = [
 
       const { summary: summaryText, keyPoints } = response.data;
 
-      // Sauvegarder le résumé dans la DB
+      // Créer le résumé dans la DB
       const summary = await Summary.create({
         documentId,
         userId: req.user.id,
-        length,
+        length, 
         content: summaryText,
-        keyPoints: JSON.stringify(keyPoints) // si ton champ DB est JSON
+        keyPoints: JSON.stringify(keyPoints || [])
       });
 
+      // Réponse au front
       res.status(201).json({
         message: 'Summary generated successfully',
         summary: {
           id: summary.id,
           length: summary.length,
           content: summary.content,
-          keyPoints: JSON.parse(summary.keyPoints),
-          generatedAt: summary.generatedAt
+          keyPoints: summary.keyPoints ? JSON.parse(summary.keyPoints) : [],
+          generatedAt: summary.createdAt
         }
       });
 
     } catch (error) {
       console.error('Generate summary error:', error.message);
-      // Si FastAPI renvoie une erreur, la renvoyer au client
       if (error.response) {
         res.status(error.response.status).json(error.response.data);
       } else {
@@ -95,7 +95,7 @@ export const getDocumentSummaries = async (req, res) => {
         documentId: req.params.documentId,
         userId: req.user.id
       },
-      order: [['generatedAt', 'DESC']]
+      order: [['createdAt', 'DESC']] // ⚠️ utiliser createdAt
     });
 
     res.json(summaries);
