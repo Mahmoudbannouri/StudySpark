@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -9,66 +8,59 @@ import { AuthService } from './auth.service';
 export class SummaryService {
   private apiUrl = 'http://localhost:5000/api/summaries';
 
-  constructor(private http: HttpClient, private auth: AuthService) {}
+  constructor(private http: HttpClient) {}
 
   /**
-   * ✅ Generate summary from uploaded file
+   * Generate summary from uploaded file
    * Sends file directly to backend
    */
   generateSummaryFromFile(
     file: File, 
-    length: 'short' | 'medium' | 'detailed'
+    length: 'short' | 'medium' | 'detailed',
+    userId: number
   ): Observable<any> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('length', length);
+    formData.append('userId', userId.toString());
 
-    return this.http.post(
-      `${this.apiUrl}/generate/upload`,
-      formData,
-      { headers: this.auth.getAuthHeaders() }
-    );
+    return this.http.post(`${this.apiUrl}/generate/upload`, formData);
   }
 
   /**
-   * ✅ Generate summary from existing document
+   * Generate summary from existing document
    * Backend fetches file from storage
    */
   generateSummaryFromDocument(
     documentId: number,
-    length: 'short' | 'medium' | 'detailed'
+    length: 'short' | 'medium' | 'detailed',
+    userId: number
   ): Observable<any> {
-    return this.http.post(
-      `${this.apiUrl}/generate/document`,
-      { documentId, length },
-      { headers: this.auth.getAuthHeaders() }
-    );
+    return this.http.post(`${this.apiUrl}/generate/document`, {
+      documentId,
+      length,
+      userId
+    });
   }
 
   /**
    * Get all summaries for a document
    */
-  getDocumentSummaries(documentId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/document/${documentId}`, {
-      headers: this.auth.getAuthHeaders()
-    });
+  getDocumentSummaries(documentId: number, userId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/document/${documentId}?userId=${userId}`);
   }
 
   /**
    * Get a single summary by ID
    */
-  getSummaryById(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`, {
-      headers: this.auth.getAuthHeaders()
-    });
+  getSummaryById(id: number, userId: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}?userId=${userId}`);
   }
 
   /**
    * Delete a summary
    */
-  deleteSummary(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${id}`, {
-      headers: this.auth.getAuthHeaders()
-    });
+  deleteSummary(id: number, userId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}?userId=${userId}`);
   }
 }

@@ -2,30 +2,29 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { SummaryService } from '../../../services/summary.service';
-import { DocumentService } from '../../../services/document.service';
+import { DocumentService, Document } from '../../../services/document.service'; // Import Document interface
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component';
 import { AuthService } from '../../../services/auth.service';
 import { FormsModule } from '@angular/forms';
 
-interface Document {
-  id: number;
-  name: string;
-  originalName: string;
-  fileType: string;
-  fileSize: number;
-  wordCount?: number;
-  status: 'processing' | 'ready' | 'error';
-  uploadedAt: string;
-}
-
 interface Summary {
   id: number;
-  documentId: number;
+  documentId: number | null;
   userId: number;
   length: 'short' | 'medium' | 'detailed';
   content: string;
   keyPoints: string[];
   generatedAt: string;
+  metadata?: {
+    wordCount?: number;
+    readabilityScore?: number;
+    readingLevel?: string;
+    language?: string;
+    sentiment?: { polarity: number; subjectivity: number };
+    keywords?: string[];
+    aiModel?: string;
+    chunksUsed?: number;
+  };
 }
 
 @Component({
@@ -33,7 +32,7 @@ interface Summary {
   standalone: true,
   imports: [CommonModule, SidebarComponent, FormsModule, RouterModule],
   templateUrl: './summarizer.component.html',
-  styleUrl: './summarizer.component.scss'
+  styleUrls: ['./summarizer.component.scss']
 })
 export class SummarizerComponent implements OnInit {
   mode: 'upload' | 'select' = 'select';
@@ -60,15 +59,24 @@ export class SummarizerComponent implements OnInit {
   ngOnInit(): void {
     this.user = this.auth.getUserInfo();
     console.log('👤 User:', JSON.stringify(this.user, null, 2));
+    if (!this.user?.id) {
+      this.error = 'User not authenticated. Please log in.';
+      this.router.navigate(['/login']);
+      return;
+    }
     this.loadDocuments();
   }
 
   loadDocuments(): void {
+    if (!this.user?.id) {
+      this.error = 'User not authenticated. Please log in.';
+      return;
+    }
     this.loading = true;
-    this.documentService.getUserDocuments().subscribe({
+    this.documentService.getUserDocumentsFiltered(this.user.id, { status: 'ready' }).subscribe({
       next: (docs: Document[]) => {
         console.log('✅ Documents loaded:', JSON.stringify(docs, null, 2));
-        this.documents = docs.filter(d => d.status === 'ready');
+        this.documents = docs; // Already filtered by 'ready' status
         this.loading = false;
         if (this.documents.length === 0) {
           this.error = 'No documents available. Please upload a document.';
@@ -111,8 +119,12 @@ export class SummarizerComponent implements OnInit {
   }
 
   loadSummariesForDocument(docId: number): void {
+    if (!this.user?.id) {
+      this.error = 'User not authenticated. Please log in.';
+      return;
+    }
     console.log('📋 Loading summaries for document:', docId);
-    this.summaryService.getDocumentSummaries(docId).subscribe({
+    this.summaryService.getDocumentSummaries(docId, this.user.id).subscribe({
       next: (summaries: Summary[]) => {
         console.log('✅ Summaries loaded:', JSON.stringify(summaries, null, 2));
         this.summaries = summaries;
@@ -146,6 +158,13 @@ export class SummarizerComponent implements OnInit {
   }
 
   generateSummary(): void {
+    if (!this.user?.id) {
+      this.error = 'User not authenticated. Please log in.';
+      console.warn('⚠️ No user ID available for summary generation');
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.error = '';
     this.success = '';
     console.log('🚀 Attempting to generate summary:', {
@@ -178,20 +197,18 @@ export class SummarizerComponent implements OnInit {
   }
 
   generateFromUpload(): void {
-    if (!this.selectedFile) return;
+    if (!this.selectedFile || !this.user?.id) return;
 
     console.log('🚀 Generating summary from upload:', {
       file: this.selectedFile.name,
-      length: this.selectedLength
+      length: this.selectedLength,
+      userId: this.user.id
     });
 
     this.generating = true;
     this.cdr.detectChanges();
 
-    this.summaryService.generateSummaryFromFile(
-      this.selectedFile,
-      this.selectedLength
-    ).subscribe({
+    this.summaryService.generateSummaryFromFile(this.selectedFile, this.selectedLength, this.user.id).subscribe({
       next: (response) => {
         console.log('✅ Summary generated from upload:', JSON.stringify(response, null, 2));
         this.success = 'Summary generated successfully!';
@@ -210,20 +227,18 @@ export class SummarizerComponent implements OnInit {
   }
 
   generateFromDocument(): void {
-    if (!this.selectedDocumentId) return;
+    if (!this.selectedDocumentId || !this.user?.id) return;
 
     console.log('🚀 Generating summary from document:', {
       documentId: this.selectedDocumentId,
-      length: this.selectedLength
+      length: this.selectedLength,
+      userId: this.user.id
     });
 
     this.generating = true;
     this.cdr.detectChanges();
 
-    this.summaryService.generateSummaryFromDocument(
-      this.selectedDocumentId,
-      this.selectedLength
-    ).subscribe({
+    this.summaryService.generateSummaryFromDocument(this.selectedDocumentId, this.selectedLength, this.user.id).subscribe({
       next: (response) => {
         console.log('✅ Summary generated from document:', JSON.stringify(response, null, 2));
         this.success = 'Summary generated successfully!';
@@ -241,13 +256,18 @@ export class SummarizerComponent implements OnInit {
   }
 
   deleteSummary(summaryId: number): void {
+    if (!this.user?.id) {
+      this.error = 'User not authenticated. Please log in.';
+      return;
+    }
+
     if (!confirm('Are you sure you want to delete this summary?')) {
       return;
     }
 
     console.log('🗑️ Deleting summary:', summaryId);
 
-    this.summaryService.deleteSummary(summaryId).subscribe({
+    this.summaryService.deleteSummary(summaryId, this.user.id).subscribe({
       next: () => {
         console.log('✅ Summary deleted');
         this.summaries = this.summaries.filter(s => s.id !== summaryId);

@@ -46,9 +46,9 @@ export const generateSummaryFromUpload = [
         timeout: 120000
       });
 
-      console.log('✅ FastAPI response received');
+      console.log('✅ FastAPI response received:', response.data);
 
-      const { summary: summaryText, key_points } = response.data;
+      const { summary: summaryText, keyPoints, metrics } = response.data;
 
       // Create summary in database (no documentId - it's an ad-hoc summary)
       const summary = await Summary.create({
@@ -56,7 +56,16 @@ export const generateSummaryFromUpload = [
         userId,
         type: length,
         content: summaryText,
-        keyPoints: key_points || [],
+        keyPoints: keyPoints || [],
+        metadata: metrics || {}, // Store FastAPI metrics
+        wordCount: metrics?.wordCount || 0,
+        readabilityScore: metrics?.readabilityScore || null,
+        language: metrics?.language || null,
+        readingLevel: metrics?.readingLevel || null,
+        sentiment: metrics?.sentiment || {},
+        keywords: metrics?.keywords || [],
+        aiModel: metrics?.aiModel || 'facebook/bart-large-cnn',
+        chunksUsed: metrics?.chunksUsed || 0,
         generatedAt: new Date()
       });
 
@@ -70,11 +79,12 @@ export const generateSummaryFromUpload = [
           length: summary.type,
           content: summary.content,
           keyPoints: summary.keyPoints,
-          generatedAt: summary.generatedAt
+          generatedAt: summary.generatedAt,
+          metadata: summary.metadata
         }
       });
     } catch (error) {
-      console.error('❌ Generate from upload error:', error.message);
+      console.error('❌ Generate from upload error:', error.stack);
       if (error.response) {
         return res.status(error.response.status).json({
           message: 'FastAPI service error',
@@ -145,9 +155,9 @@ export const generateSummaryFromDocument = async (req, res) => {
       timeout: 120000
     });
 
-    console.log('✅ FastAPI response received');
+    console.log('✅ FastAPI response received:', response.data);
 
-    const { summary: summaryText, key_points } = response.data;
+    const { summary: summaryText, keyPoints, metrics } = response.data;
 
     // Create summary in database
     const summary = await Summary.create({
@@ -155,7 +165,16 @@ export const generateSummaryFromDocument = async (req, res) => {
       userId,
       type: length,
       content: summaryText,
-      keyPoints: key_points || [],
+      keyPoints: keyPoints || [],
+      metadata: metrics || {},
+      wordCount: metrics?.wordCount || 0,
+      readabilityScore: metrics?.readabilityScore || null,
+      language: metrics?.language || null,
+      readingLevel: metrics?.readingLevel || null,
+      sentiment: metrics?.sentiment || {},
+      keywords: metrics?.keywords || [],
+      aiModel: metrics?.aiModel || 'facebook/bart-large-cnn',
+      chunksUsed: metrics?.chunksUsed || 0,
       generatedAt: new Date()
     });
 
@@ -170,11 +189,12 @@ export const generateSummaryFromDocument = async (req, res) => {
         length: summary.type,
         content: summary.content,
         keyPoints: summary.keyPoints,
-        generatedAt: summary.generatedAt
+        generatedAt: summary.generatedAt,
+        metadata: summary.metadata
       }
     });
   } catch (error) {
-    console.error('❌ Generate from document error:', error.message);
+    console.error('❌ Generate from document error:', error.stack);
     if (error.response) {
       return res.status(error.response.status).json({
         message: 'FastAPI service error',
@@ -194,7 +214,7 @@ export const generateSummaryFromDocument = async (req, res) => {
  */
 export const getDocumentSummaries = async (req, res) => {
   try {
-    const { userId } = req.query; // Use query param for userId
+    const { userId } = req.query;
     const { documentId } = req.params;
 
     if (!userId) {
@@ -217,12 +237,13 @@ export const getDocumentSummaries = async (req, res) => {
       content: s.content,
       keyPoints: s.keyPoints,
       generatedAt: s.generatedAt,
-      createdAt: s.createdAt
+      createdAt: s.createdAt,
+      metadata: s.metadata
     }));
 
     res.json(formattedSummaries);
   } catch (error) {
-    console.error('Get summaries error:', error);
+    console.error('Get summaries error:', error.stack);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -233,7 +254,7 @@ export const getDocumentSummaries = async (req, res) => {
  */
 export const getSummaryById = async (req, res) => {
   try {
-    const { userId } = req.query; // Use query param for userId
+    const { userId } = req.query;
     const { id } = req.params;
 
     if (!userId) {
@@ -255,10 +276,11 @@ export const getSummaryById = async (req, res) => {
       type: summary.type,
       content: summary.content,
       keyPoints: summary.keyPoints,
-      generatedAt: summary.generatedAt
+      generatedAt: summary.generatedAt,
+      metadata: summary.metadata
     });
   } catch (error) {
-    console.error('Get summary error:', error);
+    console.error('Get summary error:', error.stack);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -269,7 +291,7 @@ export const getSummaryById = async (req, res) => {
  */
 export const deleteSummary = async (req, res) => {
   try {
-    const { userId } = req.query; // Use query param for userId
+    const { userId } = req.query;
     const { id } = req.params;
 
     if (!userId) {
@@ -287,7 +309,7 @@ export const deleteSummary = async (req, res) => {
     await summary.destroy();
     res.json({ message: 'Summary deleted successfully' });
   } catch (error) {
-    console.error('Delete summary error:', error);
+    console.error('Delete summary error:', error.stack);
     res.status(500).json({ message: 'Server error' });
   }
 };

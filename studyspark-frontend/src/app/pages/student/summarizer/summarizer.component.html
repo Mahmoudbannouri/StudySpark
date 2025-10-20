@@ -130,6 +130,17 @@
                   <li *ngFor="let point of summary.keyPoints">{{ point }}</li>
                 </ul>
               </div>
+
+              <div class="metrics" *ngIf="summary.metadata">
+                <h6>Metrics:</h6>
+                <p><strong>Word Count:</strong> {{ summary.metadata.wordCount || 'N/A' }}</p>
+                <p><strong>Readability Score:</strong> {{ summary.metadata.readabilityScore || 'N/A' }}</p>
+                <p><strong>Reading Level:</strong> {{ summary.metadata.readingLevel || 'N/A' }}</p>
+                <p><strong>Language:</strong> {{ summary.metadata.language || 'N/A' }}</p>
+                <p><strong>Sentiment:</strong> Polarity: {{ summary.metadata.sentiment?.polarity || 'N/A' }}, Subjectivity: {{ summary.metadata.sentiment?.subjectivity || 'N/A' }}</p>
+                <p><strong>Model:</strong> {{ summary.metadata.aiModel || 'N/A' }}</p>
+                <p><strong>Chunks Used:</strong> {{ summary.metadata.chunksUsed || 'N/A' }}</p>
+              </div>
             </div>
           </div>
         </div>
