@@ -1,0 +1,17 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+/node_modules
+
+# Environment variables
+# Never commit this file! It contains sensitive credentials.
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Coverage reports
+coverage
+.nyc_output

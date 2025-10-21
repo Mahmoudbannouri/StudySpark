@@ -196,16 +196,17 @@
                   placeholder="Search in transcription...">
               </div>
 
-              <div class="text-content">
-                <div
-                  class="text-segment"
-                  *ngFor="let segment of currentTranscription.segments"
-                  [class.highlight]="isHighlighted(segment)">
-                  <span class="timestamp" *ngIf="options.timestamps">{{ segment.timestamp }}</span>
-                  <span class="speaker" *ngIf="options.speakers && segment.speaker">{{ segment.speaker }}:</span>
-                  <span class="text">{{ segment.text }}</span>
-                </div>
+               @if(this.currentTranscription){
+                  <div class="text-content">
+                  <p>{{ this.currentTranscription.summary! }} .</p>
+                      </div>
+              }@else {
+ <div class="text-content">
+                no  transcription  found.
               </div>
+              }
+
+
             </div>
 
             <!-- Summary Tab -->

@@ -1,120 +1,305 @@
+import axios from 'axios';
+import FormData from 'form-data';
+import fs from 'fs';
+import path from 'path';
+import multer from 'multer';
 import Summary from '../models/Summary.js';
 import Document from '../models/Document.js';
 
-// @route   POST /api/summaries/generate
-// @desc    Generate summary for a document (Imen's AI module)
-// @access  Private
-export const generateSummary = async (req, res) => {
-  try {
-    const { documentId, length } = req.body;
+const upload = multer();
 
+/**
+ * POST /api/summaries/generate/upload
+ * Generates summary from uploaded file (no document ID needed)
+ */
+export const generateSummaryFromUpload = [
+  upload.single('file'),
+  async (req, res) => {
+    try {
+      const { length, userId } = req.body;
+
+      console.log('📤 Generate from upload:', { length, userId });
+
+      // Validation
+      if (!userId) {
+        return res.status(400).json({ message: 'userId is required' });
+      }
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+      if (!['short', 'medium', 'detailed'].includes(length)) {
+        return res.status(400).json({ message: 'Invalid length type' });
+      }
+
+      // Prepare FormData with uploaded file buffer
+      const formData = new FormData();
+      formData.append('file', req.file.buffer, req.file.originalname);
+      formData.append('level', length);
+
+      console.log('🚀 Sending to FastAPI...');
+
+      // Call FastAPI microservice
+      const response = await axios.post('http://localhost:8000/summarize', formData, {
+        headers: formData.getHeaders(),
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        timeout: 120000
+      });
+
+      console.log('✅ FastAPI response received:', response.data);
+
+      const { summary: summaryText, keyPoints, metrics } = response.data;
+
+      // Create summary in database (no documentId - it's an ad-hoc summary)
+      const summary = await Summary.create({
+        documentId: null, // No document associated
+        userId,
+        type: length,
+        content: summaryText,
+        keyPoints: keyPoints || [],
+        metadata: metrics || {}, // Store FastAPI metrics
+        wordCount: metrics?.wordCount || 0,
+        readabilityScore: metrics?.readabilityScore || null,
+        language: metrics?.language || null,
+        readingLevel: metrics?.readingLevel || null,
+        sentiment: metrics?.sentiment || {},
+        keywords: metrics?.keywords || [],
+        aiModel: metrics?.aiModel || 'facebook/bart-large-cnn',
+        chunksUsed: metrics?.chunksUsed || 0,
+        generatedAt: new Date()
+      });
+
+      console.log('💾 Summary saved:', summary.id);
+
+      res.status(201).json({
+        message: 'Summary generated successfully',
+        summary: {
+          id: summary.id,
+          type: summary.type,
+          length: summary.type,
+          content: summary.content,
+          keyPoints: summary.keyPoints,
+          generatedAt: summary.generatedAt,
+          metadata: summary.metadata
+        }
+      });
+    } catch (error) {
+      console.error('❌ Generate from upload error:', error.stack);
+      if (error.response) {
+        return res.status(error.response.status).json({
+          message: 'FastAPI service error',
+          error: error.response.data
+        });
+      }
+      res.status(500).json({ 
+        message: 'Server error', 
+        error: error.message 
+      });
+    }
+  }
+];
+
+/**
+ * POST /api/summaries/generate/document
+ * Generates summary from existing document in storage
+ */
+export const generateSummaryFromDocument = async (req, res) => {
+  try {
+    const { documentId, length, userId } = req.body;
+
+    console.log('📄 Generate from document:', { documentId, length, userId });
+
+    // Validation
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+    if (!documentId) {
+      return res.status(400).json({ message: 'Document ID is required' });
+    }
     if (!['short', 'medium', 'detailed'].includes(length)) {
       return res.status(400).json({ message: 'Invalid length type' });
     }
 
+    // Fetch document from database
     const document = await Document.findOne({
-      where: { id: documentId, userId: req.user.id }
+      where: { id: documentId, userId }
     });
 
     if (!document) {
       return res.status(404).json({ message: 'Document not found' });
     }
 
-    // TODO: Call Imen's AI summarization model
-    // const aiSummary = await aiSummarizer.generate(document.extractedText, length);
+    // Check if file exists
+    const filePath = path.resolve(document.filePath);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'Document file not found on server' });
+    }
 
-    // Placeholder AI response
-    const mockSummaries = {
-      short: 'This is a short summary of the document covering main points.',
-      medium: 'This is a medium-length summary providing more context and details about the key concepts discussed in the document.',
-      detailed: 'This is a detailed summary that thoroughly explains all major topics, subtopics, and important details found throughout the document. It provides comprehensive coverage of the material.'
-    };
+    console.log('📂 File found:', filePath);
 
-    const content = mockSummaries[length];
-    const keyPoints = [
-      'Main concept 1',
-      'Important idea 2',
-      'Key takeaway 3'
-    ];
+    // Create FormData with file stream
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(filePath), {
+      filename: document.originalName || document.name,
+      contentType: document.fileType || 'application/octet-stream'
+    });
+    formData.append('level', length);
 
-    // Save summary to database
+    console.log('🚀 Sending to FastAPI...');
+
+    // Call FastAPI microservice
+    const response = await axios.post('http://localhost:8000/summarize', formData, {
+      headers: formData.getHeaders(),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      timeout: 120000
+    });
+
+    console.log('✅ FastAPI response received:', response.data);
+
+    const { summary: summaryText, keyPoints, metrics } = response.data;
+
+    // Create summary in database
     const summary = await Summary.create({
       documentId,
-      userId: req.user.id,
-      length,
-      content,
-      keyPoints
+      userId,
+      type: length,
+      content: summaryText,
+      keyPoints: keyPoints || [],
+      metadata: metrics || {},
+      wordCount: metrics?.wordCount || 0,
+      readabilityScore: metrics?.readabilityScore || null,
+      language: metrics?.language || null,
+      readingLevel: metrics?.readingLevel || null,
+      sentiment: metrics?.sentiment || {},
+      keywords: metrics?.keywords || [],
+      aiModel: metrics?.aiModel || 'facebook/bart-large-cnn',
+      chunksUsed: metrics?.chunksUsed || 0,
+      generatedAt: new Date()
     });
+
+    console.log('💾 Summary saved:', summary.id);
 
     res.status(201).json({
       message: 'Summary generated successfully',
       summary: {
         id: summary.id,
-        length: summary.length,
+        documentId: summary.documentId,
+        type: summary.type,
+        length: summary.type,
         content: summary.content,
         keyPoints: summary.keyPoints,
-        generatedAt: summary.generatedAt
+        generatedAt: summary.generatedAt,
+        metadata: summary.metadata
       }
     });
   } catch (error) {
-    console.error('Generate summary error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ Generate from document error:', error.stack);
+    if (error.response) {
+      return res.status(error.response.status).json({
+        message: 'FastAPI service error',
+        error: error.response.data
+      });
+    }
+    res.status(500).json({ 
+      message: 'Server error', 
+      error: error.message 
+    });
   }
 };
 
-// @route   GET /api/summaries/document/:documentId
-// @desc    Get all summaries for a document
-// @access  Private
+/**
+ * GET /api/summaries/document/:documentId
+ * Returns all summaries for a document
+ */
 export const getDocumentSummaries = async (req, res) => {
   try {
+    const { userId } = req.query;
+    const { documentId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+
     const summaries = await Summary.findAll({
       where: {
-        documentId: req.params.documentId,
-        userId: req.user.id
+        documentId,
+        userId
       },
       order: [['generatedAt', 'DESC']]
     });
 
-    res.json(summaries);
+    const formattedSummaries = summaries.map(s => ({
+      id: s.id,
+      documentId: s.documentId,
+      length: s.type,
+      type: s.type,
+      content: s.content,
+      keyPoints: s.keyPoints,
+      generatedAt: s.generatedAt,
+      createdAt: s.createdAt,
+      metadata: s.metadata
+    }));
+
+    res.json(formattedSummaries);
   } catch (error) {
-    console.error('Get summaries error:', error);
+    console.error('Get summaries error:', error.stack);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// @route   GET /api/summaries/:id
-// @desc    Get single summary
-// @access  Private
+/**
+ * GET /api/summaries/:id
+ * Returns a single summary by ID
+ */
 export const getSummaryById = async (req, res) => {
   try {
+    const { userId } = req.query;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+
     const summary = await Summary.findOne({
-      where: {
-        id: req.params.id,
-        userId: req.user.id
-      }
+      where: { id, userId }
     });
 
     if (!summary) {
       return res.status(404).json({ message: 'Summary not found' });
     }
 
-    res.json(summary);
+    res.json({
+      id: summary.id,
+      documentId: summary.documentId,
+      length: summary.type,
+      type: summary.type,
+      content: summary.content,
+      keyPoints: summary.keyPoints,
+      generatedAt: summary.generatedAt,
+      metadata: summary.metadata
+    });
   } catch (error) {
-    console.error('Get summary error:', error);
+    console.error('Get summary error:', error.stack);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-// @route   DELETE /api/summaries/:id
-// @desc    Delete a summary
-// @access  Private
+/**
+ * DELETE /api/summaries/:id
+ * Deletes a summary
+ */
 export const deleteSummary = async (req, res) => {
   try {
+    const { userId } = req.query;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ message: 'userId is required' });
+    }
+
     const summary = await Summary.findOne({
-      where: {
-        id: req.params.id,
-        userId: req.user.id
-      }
+      where: { id, userId }
     });
 
     if (!summary) {
@@ -124,7 +309,7 @@ export const deleteSummary = async (req, res) => {
     await summary.destroy();
     res.json({ message: 'Summary deleted successfully' });
   } catch (error) {
-    console.error('Delete summary error:', error);
+    console.error('Delete summary error:', error.stack);
     res.status(500).json({ message: 'Server error' });
   }
 };

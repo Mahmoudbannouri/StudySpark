@@ -3,119 +3,148 @@
 
   <div class="main-content">
     <div class="summarizer-container">
-  <!-- Header -->
-  <div class="page-header">
-    <div class="header-left">
-      <button class="btn-back" (click)="goBack()">
-        <i class="bi bi-arrow-left"></i> Back to Dashboard
-      </button>
-      <div>
-        <h2><i class="bi bi-file-text"></i> Document Summarizer</h2>
-        <p class="document-name" *ngIf="document">{{ document.name }}</p>
-      </div>
-    </div>
-    <div class="header-right" *ngIf="user">
-      <div class="user-badge">
-        <span class="user-name"><i class="bi bi-person-circle"></i> {{ user.fullname }}</span>
-        <span class="user-id">ID: {{ user.id }}</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="content-wrapper">
-    <!-- Left Panel: Generate Summary -->
-    <div class="left-panel">
-      <div class="generate-card">
-        <h4>Generate New Summary</h4>
-        <p class="text-muted">Choose the level of detail for your summary</p>
-
-        <div class="length-options">
-          <button
-            class="length-btn"
-            [class.active]="selectedLength === 'short'"
-            (click)="selectLength('short')">
-            <i class="bi bi-lightning"></i>
-            <span>Short</span>
-            <small>Quick overview</small>
+      <!-- Header -->
+      <div class="page-header">
+        <div class="header-left">
+          <button class="btn-back" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
           </button>
-          <button
-            class="length-btn"
-            [class.active]="selectedLength === 'medium'"
-            (click)="selectLength('medium')">
-            <i class="bi bi-card-text"></i>
-            <span>Medium</span>
-            <small>Balanced summary</small>
-          </button>
-          <button
-            class="length-btn"
-            [class.active]="selectedLength === 'detailed'"
-            (click)="selectLength('detailed')">
-            <i class="bi bi-file-earmark-text"></i>
-            <span>Detailed</span>
-            <small>In-depth analysis</small>
-          </button>
+          <div>
+            <h2><i class="bi bi-file-text"></i> Document Summarizer</h2>
+            <p class="document-name" *ngIf="document">{{ document.name }}</p>
+            <p class="document-name text-muted" *ngIf="!document && mode === 'select'">No document selected</p>
+          </div>
         </div>
-
-        <button
-          class="btn-generate"
-          (click)="generateSummary()"
-          [disabled]="generating || loading">
-          <span *ngIf="!generating"><i class="bi bi-stars"></i> Generate Summary</span>
-          <span *ngIf="generating"><i class="bi bi-hourglass-split"></i> Generating...</span>
-        </button>
-
-        <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+        <div class="header-right" *ngIf="user">
+          <div class="user-badge">
+            <span class="user-name"><i class="bi bi-person-circle"></i> {{ user.fullname }}</span>
+            <span class="user-id">ID: {{ user.id }}</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Document Info -->
-      <div class="document-info" *ngIf="document">
-        <h5>Document Details</h5>
-        <p><strong>Name:</strong> {{ document.name }}</p>
-        <p><strong>Type:</strong> {{ document.fileType }}</p>
-        <p><strong>Words:</strong> {{ document.wordCount || 'N/A' }}</p>
-        <p><strong>Status:</strong>
-          <span class="badge" [class.badge-success]="document.status === 'ready'"
-                [class.badge-warning]="document.status === 'processing'">
-            {{ document.status }}
-          </span>
-        </p>
-      </div>
-    </div>
+      <div class="content-wrapper">
+        <!-- Left Panel: Generate Summary -->
+        <div class="left-panel">
+          <div class="generate-card">
+            <!-- Document Selection -->
+            <div class="document-selector" *ngIf="mode === 'select'">
+              <h4>Select a Document</h4>
+              <select
+                [(ngModel)]="selectedDocumentId"
+                (ngModelChange)="selectDocument($event)"
+                name="document"
+                data-testid="document-selector">
+                <option value="" disabled>Select a document</option>
+                <option *ngFor="let doc of documents" [value]="doc.id">{{ doc.name }}</option>
+              </select>
+              <small *ngIf="documents.length === 0 && !loading">
+                No documents available. <a [routerLink]="['/student/upload']">Upload a document</a>
+              </small>
+            </div>
 
-    <!-- Right Panel: Summaries History -->
-    <div class="right-panel">
-      <h4>Summary History</h4>
+            <h4>Generate New Summary</h4>
+            <p class="text-muted">Choose the level of detail for your summary</p>
 
-      <div class="empty-state" *ngIf="summaries.length === 0 && !loading">
-        <i class="bi bi-inbox"></i>
-        <p>No summaries yet</p>
-        <small>Generate your first summary to get started</small>
-      </div>
+            <div class="length-options">
+              <button
+                class="length-btn"
+                [class.active]="selectedLength === 'short'"
+                (click)="selectLength('short')">
+                <i class="bi bi-lightning"></i>
+                <span>Short</span>
+                <small>Quick overview</small>
+              </button>
+              <button
+                class="length-btn"
+                [class.active]="selectedLength === 'medium'"
+                (click)="selectLength('medium')">
+                <i class="bi bi-card-text"></i>
+                <span>Medium</span>
+                <small>Balanced summary</small>
+              </button>
+              <button
+                class="length-btn"
+                [class.active]="selectedLength === 'detailed'"
+                (click)="selectLength('detailed')">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Detailed</span>
+                <small>In-depth analysis</small>
+              </button>
+            </div>
 
-      <div class="summaries-list">
-        <div class="summary-card" *ngFor="let summary of summaries">
-          <div class="summary-header">
-            <span class="badge badge-{{ summary.length }}">{{ summary.length }}</span>
-            <span class="summary-date">{{ summary.generatedAt | date: 'short' }}</span>
-            <button class="btn-delete" (click)="deleteSummary(summary.id)">
-              <i class="bi bi-trash"></i>
+            <button
+              class="btn-generate"
+              (click)="generateSummary()"
+              [disabled]="generating || loading || (mode === 'select' && !selectedDocumentId)">
+              <span *ngIf="!generating"><i class="bi bi-stars"></i> Generate Summary</span>
+              <span *ngIf="generating"><i class="bi bi-hourglass-split"></i> Generating...</span>
             </button>
+
+            <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+            <div class="alert alert-success" *ngIf="success">{{ success }}</div>
           </div>
 
-          <div class="summary-content">
-            <p>{{ summary.content }}</p>
+          <!-- Document Info -->
+          <div class="document-info" *ngIf="document">
+            <h5>Document Details</h5>
+            <p><strong>Name:</strong> {{ document.name }}</p>
+            <p><strong>Type:</strong> {{ document.fileType }}</p>
+            <p><strong>Words:</strong> {{ document.wordCount || 'N/A' }}</p>
+            <p><strong>Status:</strong>
+              <span class="badge" [class.badge-success]="document.status === 'ready'"
+                    [class.badge-warning]="document.status === 'processing'">
+                {{ document.status }}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Right Panel: Summaries History -->
+        <div class="right-panel">
+          <h4>Summary History</h4>
+
+          <div class="empty-state" *ngIf="summaries.length === 0 && !loading">
+            <i class="bi bi-inbox"></i>
+            <p>No summaries yet</p>
+            <small>Generate your first summary to get started</small>
           </div>
 
-          <div class="key-points" *ngIf="summary.keyPoints && summary.keyPoints.length > 0">
-            <h6>Key Points:</h6>
-            <ul>
-              <li *ngFor="let point of summary.keyPoints">{{ point }}</li>
-            </ul>
+          <div class="summaries-list">
+            <div class="summary-card" *ngFor="let summary of summaries">
+              <div class="summary-header">
+                <span class="badge badge-{{ summary.length }}">{{ summary.length }}</span>
+                <span class="summary-date">{{ summary.generatedAt | date: 'short' }}</span>
+                <button class="btn-delete" (click)="deleteSummary(summary.id)">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+
+              <div class="summary-content">
+                <p>{{ summary.content }}</p>
+              </div>
+
+              <div class="key-points" *ngIf="summary.keyPoints && summary.keyPoints.length > 0">
+                <h6>Key Points:</h6>
+                <ul>
+                  <li *ngFor="let point of summary.keyPoints">{{ point }}</li>
+                </ul>
+              </div>
+
+              <div class="metrics" *ngIf="summary.metadata">
+                <h6>Metrics:</h6>
+                <p><strong>Word Count:</strong> {{ summary.metadata.wordCount || 'N/A' }}</p>
+                <p><strong>Readability Score:</strong> {{ summary.metadata.readabilityScore || 'N/A' }}</p>
+                <p><strong>Reading Level:</strong> {{ summary.metadata.readingLevel || 'N/A' }}</p>
+                <p><strong>Language:</strong> {{ summary.metadata.language || 'N/A' }}</p>
+                <p><strong>Sentiment:</strong> Polarity: {{ summary.metadata.sentiment?.polarity || 'N/A' }}, Subjectivity: {{ summary.metadata.sentiment?.subjectivity || 'N/A' }}</p>
+                <p><strong>Model:</strong> {{ summary.metadata.aiModel || 'N/A' }}</p>
+                <p><strong>Chunks Used:</strong> {{ summary.metadata.chunksUsed || 'N/A' }}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
   </div>
 </div>
