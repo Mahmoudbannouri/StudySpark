@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Preferences } from '../pages/student/study-plan/preference-modal.component';
 import { AuthService } from './auth.service';
+import { API_BASE } from '../api.config';
 interface Task {
   date: string;
   day: string;
@@ -27,7 +28,7 @@ export interface StudyPlan {
   providedIn: 'root'
 })
 export class StudyPlanService {
-  private baseUrl = 'http://localhost:5000/api/study-plans'; // adjust your backend URL
+  private baseUrl = `${API_BASE}/study-plans`;
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 

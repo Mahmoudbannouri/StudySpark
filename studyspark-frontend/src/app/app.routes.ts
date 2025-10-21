@@ -18,6 +18,7 @@ import { FlashcardsComponent } from './pages/student/flashcards/flashcards.compo
 import { QuizComponent } from './pages/student/quiz/quiz.component';
 import { MindMapComponent } from './pages/student/mind-map/mind-map.component';
 import { VisualizeComponent } from './pages/student/visualize/visualize.component';
+import { StudygroupRecommendationsComponent } from './pages/student/studygroup-recommendations/studygroup-recommendations.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -41,6 +42,7 @@ export const routes: Routes = [
   { path: 'student/mind-map', component: MindMapComponent, canActivate: [AuthGuard] },
   { path: 'student/transcribe', component: TranscribeComponent, canActivate: [AuthGuard] },
   { path: 'student/visualize', component: VisualizeComponent, canActivate: [AuthGuard] },
+  { path: 'student/studygroups', component: StudygroupRecommendationsComponent, canActivate: [AuthGuard] },
 
   // Session route
   { path: 'session', component: SessionPageComponent, canActivate: [AuthGuard] },

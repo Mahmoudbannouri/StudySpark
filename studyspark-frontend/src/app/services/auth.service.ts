@@ -3,12 +3,13 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, map, Observable } from 'rxjs';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import Swal from 'sweetalert2';
+import { API_BASE } from '../api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5000/api/users'; // ✅ your backend base route
+  private apiUrl = `${API_BASE}/users`; // ✅ centralized backend base route
   private jwtHelper = new JwtHelperService();
 
   private currentUserSubject = new BehaviorSubject<any>(null);

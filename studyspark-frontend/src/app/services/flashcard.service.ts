@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { API_BASE } from '../api.config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class FlashcardService {
-  private apiUrl = 'http://localhost:5000/api/flashcards';
+  private apiUrl = `${API_BASE}/flashcards`;
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 

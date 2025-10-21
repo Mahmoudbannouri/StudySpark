@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth.service';
+import { API_BASE } from '../api.config';
 
 @Injectable({ providedIn: 'root' })
 export class SubscriptionService {
-  private apiUrl = 'http://localhost:5000/api/subscriptions';
+  private apiUrl = `${API_BASE}/subscriptions`;
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 

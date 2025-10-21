@@ -35,6 +35,7 @@ export class SidebarComponent implements OnInit {
     { icon: 'bi-diagram-3', label: 'Mind Map', route: '/student/mind-map' },
     { icon: 'bi-camera-video', label: 'Transcribe Media', route: '/student/transcribe' },
     { icon: 'bi-image', label: 'Visualize Concepts', route: '/student/visualize' },
+    { icon: 'bi-people', label: 'Study Groups (AI)', route: '/student/studygroups' },
   ];
 
   constructor(
