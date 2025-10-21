@@ -19,8 +19,8 @@ export interface Document {
 })
 export class DocumentService {
   private apiUrl = 'http://localhost:5000/api/documents';
-
-  constructor(private http: HttpClient, private auth: AuthService) {}
+  private apiUrlPy = 'http://localhost:8000/transcribe';
+  constructor(private http: HttpClient, private auth: AuthService) { }
 
   /**
    * Upload a document (PDF, TXT, audio, video)
@@ -78,6 +78,17 @@ export class DocumentService {
 
     return this.http.get<Document[]>(`${this.apiUrl}?${query}`, {
       headers: this.auth.getAuthHeaders()
+    });
+  }
+
+  uploadVideo(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    return this.http.post(this.apiUrlPy, formData, {
+      headers: new HttpHeaders({
+        Accept: 'application/json'
+      })
     });
   }
 

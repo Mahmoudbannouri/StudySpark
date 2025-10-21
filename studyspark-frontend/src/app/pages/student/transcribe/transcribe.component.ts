@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../components/sidebar/sidebar.component';
 import { AuthService } from '../../../services/auth.service';
+import { DocumentService } from '../../../services/document.service';
 
 interface TranscriptionSegment {
   timestamp: string;
@@ -75,7 +76,9 @@ export class TranscribeComponent implements OnInit {
     }
   ];
 
-  constructor(private auth: AuthService) {}
+  constructor(private auth: AuthService,
+    private documentService: DocumentService
+  ) { }
 
   ngOnInit(): void {
     this.user = this.auth.getUserInfo();
@@ -133,22 +136,22 @@ export class TranscribeComponent implements OnInit {
     return false;
   }
 
-  startTranscription(): void {
-    this.processing = true;
+  /*  startTranscription(): void {
+      this.processing = true;
 
-    // Simulate processing
-    setTimeout(() => {
-      this.currentTranscription = this.generateMockTranscription();
-      this.processing = false;
-    }, 3000);
-  }
-
+      // Simulate processing
+      setTimeout(() => {
+        this.currentTranscription = this.generateMockTranscription();
+        this.processing = false;
+      }, 3000);
+    }
+  */
   generateMockTranscription(): Transcription {
     const title = this.uploadMethod === 'file'
       ? this.selectedFile?.name.replace(/\.[^/.]+$/, '') || 'New Video'
       : this.uploadMethod === 'youtube'
-      ? 'YouTube Video'
-      : 'Recorded Video';
+        ? 'YouTube Video'
+        : 'Recorded Video';
 
     const segments: TranscriptionSegment[] = [
       {
@@ -289,8 +292,40 @@ export class TranscribeComponent implements OnInit {
   loadTranscription(trans: Transcription): void {
     // In a real app, this would load the full transcription from backend
     this.currentTranscription = this.generateMockTranscription();
+
     this.currentTranscription.title = trans.title;
     this.currentTranscription.duration = trans.duration;
     this.currentTranscription.date = trans.date;
   }
+
+  startTranscription(): void {
+    if (!this.selectedFile) return;
+
+    this.processing = true;
+
+    this.documentService.uploadVideo(this.selectedFile).subscribe({
+      next: (response) => {
+        console.log('Response from backend:', response.transcription);
+
+        // Example: Adjust according to what your backend returns
+        this.currentTranscription = {
+          id: Date.now(),
+          title: this.selectedFile?.name.replace(/\.[^/.]+$/, '') || 'Uploaded Video',
+          duration: response.duration || 'Unknown',
+          date: new Date(),
+          segments: response.segments || [],
+          summary: response.transcription || 'No summary provided.',
+          keyPoints: response.key_points || [],
+        };
+
+
+        this.processing = false;
+      },
+      error: (err) => {
+        console.error('Upload error:', err);
+        this.processing = false;
+      }
+    });
+  }
+
 }
