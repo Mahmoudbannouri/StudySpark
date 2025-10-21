@@ -1,0 +1,7 @@
+# Pinned versions compatible with Windows and the exported model artifacts
+flask==3.1.2
+numpy==2.3.4
+scipy==1.16.2
+scikit-learn==1.6.1
+joblib==1.4.2
+pandas==2.3.3
